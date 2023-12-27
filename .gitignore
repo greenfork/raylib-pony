@@ -1,0 +1,10 @@
+_corral/
+_repos/
+
+build/
+!build/.keep
+
+.ccls-cache/
+
+zig-cache/
+zig-out/
