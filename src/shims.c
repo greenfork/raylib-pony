@@ -1,1 +1,4 @@
-#include <raylib.h>
+void*
+deref_color(void** ptr) {
+	return *ptr;
+};
