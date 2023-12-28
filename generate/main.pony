@@ -2,6 +2,7 @@ use "files"
 use "json"
 use "debug"
 use "itertools"
+use "collections"
 
 actor Main
   new create(env: Env) =>
@@ -87,7 +88,7 @@ class Generator
       let values = EnumValues
       for value' in values'.data.values() do
         let value_obj = value' as JsonObject
-        let value_name' = value_obj.data("name")? as String
+        let value_name' = Idents.whitelist(value_obj.data("name")? as String)
         let value_name = Idents.upper_to_pascal(value_name')
         let value = value_obj.data("value")? as I64
         values.push((value_name, value))
@@ -96,6 +97,7 @@ class Generator
     end
 
   fun ref gen_structs() ? =>
+    let gen = StructGenerator(_file, _cfile)
     let structs = _json.data("structs")? as JsonArray
     for struct' in structs.data.values() do
       let str = struct' as JsonObject
@@ -104,11 +106,12 @@ class Generator
       let fields = FieldValues
       for field' in fields'.data.values() do
         let field = field' as JsonObject
-        let field_name = field.data("name")? as String
+        let field_name = Idents.whitelist(field.data("name")? as String)
         let c_field_type = field.data("type")? as String
         let pony_field_type = Types.c_to_pony(c_field_type)?
-        fields.push((field_name, pony_field_type))
+        fields.push((Idents.camel_to_snake(field_name), pony_field_type))
       end
+      gen.generate(struct_name, fields)
     end
 
 type EnumValues is Array[(String val, I64)]
@@ -121,33 +124,68 @@ class EnumGenerator
 
   fun ref generate(enum_name: String val, values: EnumValues) =>
     if (enum_name == "ConfigFlags") or (enum_name == "Gesture") then
-      for (n, v) in values.values() do
+      for (name, value) in values.values() do
         _file.queue(
-          "primitive " + n + " fun value(): U32 => " + v.string() + "\n"
+          "primitive " + name + " fun value(): U32 => " + value.string() + "\n"
         )
       end
       var first_flag = true
       _file.queue("\ntype " + enum_name + " is Flags [\n")
-      for (n, v) in values.values() do
-        _file.queue("  " + if first_flag then "( " else "| " end + n + "\n")
+      for (name, _) in values.values() do
+        _file.queue("  " + if first_flag then "( " else "| " end + name + "\n")
         first_flag = false
       end
       _file.queue("), U32]\n\n")
     else
-      for (n, v) in values.values() do
+      for (name, value) in values.values() do
         _file.queue(
-          "primitive " + n + " fun apply(): I32 => " + v.string() + "\n"
+          "primitive " + name + " fun apply(): I32 => " + value.string() + "\n"
         )
       end
       var first_flag = true
       _file.queue("\ntype " + enum_name + " is\n")
-      for (n, v) in values.values() do
-        _file.queue("  " + if first_flag then "( " else "| " end + n + "\n")
+      for (name, _) in values.values() do
+        _file.queue("  " + if first_flag then "( " else "| " end + name + "\n")
         first_flag = false
       end
       _file.queue(")\n\n")
     end
     _file.flush()
+
+class StructGenerator
+  let _file: File
+  let _cfile: File
+
+  new create(file: File, cfile: File) =>
+    _file = file
+    _cfile = cfile
+
+  fun ref generate(struct_name: String val, fields: FieldValues) =>
+    _file.queue("\nstruct " + struct_name + "\n")
+    for (name, typ) in fields.values() do
+      _file.queue("  let " + name + ": " + typ + "\n")
+    end
+    _file.queue("\n  new create(")
+    var first_param = true
+    for (name, typ) in fields.values() do
+      if first_param then
+        _file.queue(name + "': " + typ)
+        first_param = false
+      else
+        _file.queue(", " + name + "': " + typ)
+      end
+    end
+    _file.queue(") =>\n")
+    for (name, typ) in fields.values() do
+      _file.queue("    " + name + " = " + name + "'\n")
+    end
+    _file.flush()
+
+primitive ASCII
+  fun upper(c: U8): U8 =>
+    if (c >= 0x61) and (c <= 0x7A) then c - 0x20 else c end
+
+  fun is_upper(c: U8): Bool => (c >= 0x41) and (c <= 0x5A)
 
 primitive Idents
   // MSAA_4X_HINT => Msaa4xHint
@@ -156,19 +194,39 @@ primitive Idents
       .map[String](Idents.word_to_pascal())
       .fold[String](String, {(acc, s) => acc + s })
 
-  fun ascii_upper(c: U8): U8 =>
-    if (c >= 0x61) and (c <= 0x7A) then c - 0x20 else c end
-
   fun word_to_pascal(): {(String val): String val } =>
     {(str': String val) =>
       if str' == "NPATCH" then
         "NPatch"
       else
         let str = str'.lower()
-        try str(0)? = Idents.ascii_upper(str(0)?) end
+        try str(0)? = ASCII.upper(str(0)?) end
         str
       end
     }
+
+  fun camel_to_snake(string: String box): String =>
+    let s: String trn = string.clone()
+    var offset: ISize = 0
+    while true do
+      try
+        offset = Stringx.find_upper(s, offset.usize())?
+        s.insert_byte(offset, '_')
+        // Debug("Found upper: '" + string(offset.usize())?.string() + "' at '"
+        //   + string + "[" + offset.string() + "]', final: '" + s + "'")
+        offset = offset + 2
+      else
+        break
+      end
+    end
+    s.lower_in_place()
+    consume s
+
+  fun whitelist(s: String box): String box =>
+    match s
+    | "type" => "typ"
+    else s
+    end
 
 primitive Types
   fun c_to_pony(s: String val): String val ? =>
@@ -188,7 +246,7 @@ primitive Types
         // Debug("s: '" + s + "', typ: '" + typ + "', stars: '" + stars + "'")
         match stars
         | "*" => "Array[" + c_to_pony(typ)? + "]"
-        | "**" => "Array[Array[ " + c_to_pony(typ)? + "]]"
+        | "**" => "Array[Array[" + c_to_pony(typ)? + "]]"
         else
           Debug("Ends with star but is '" + s + "'")
           error
@@ -206,7 +264,7 @@ primitive Types
             Debug("Failed to read a number: '" + array_part + "'")
             error
           end
-        "Array[" + base_type + "]"
+        "Array[" + c_to_pony(base_type)? + "]"
       else
         s
       end
@@ -236,3 +294,11 @@ primitive Stringx
       Debug("_ends_with failed")
       false
     end
+
+  fun find_upper(s: String box, offset: USize): ISize ? =>
+    if offset >= s.size() then error end
+    for i in Range(offset, s.size()) do
+      let c = s(i)?
+      if ASCII.is_upper(c) then return i.isize() end
+    end
+    error

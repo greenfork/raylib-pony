@@ -680,3 +680,470 @@ type NPatchLayout is
 )
 
 
+struct Vector2
+  let x: F32
+  let y: F32
+
+  new create(x': F32, y': F32) =>
+    x = x'
+    y = y'
+
+struct Vector3
+  let x: F32
+  let y: F32
+  let z: F32
+
+  new create(x': F32, y': F32, z': F32) =>
+    x = x'
+    y = y'
+    z = z'
+
+struct Vector4
+  let x: F32
+  let y: F32
+  let z: F32
+  let w: F32
+
+  new create(x': F32, y': F32, z': F32, w': F32) =>
+    x = x'
+    y = y'
+    z = z'
+    w = w'
+
+struct Matrix
+  let m0: F32
+  let m4: F32
+  let m8: F32
+  let m12: F32
+  let m1: F32
+  let m5: F32
+  let m9: F32
+  let m13: F32
+  let m2: F32
+  let m6: F32
+  let m10: F32
+  let m14: F32
+  let m3: F32
+  let m7: F32
+  let m11: F32
+  let m15: F32
+
+  new create(m0': F32, m4': F32, m8': F32, m12': F32, m1': F32, m5': F32, m9': F32, m13': F32, m2': F32, m6': F32, m10': F32, m14': F32, m3': F32, m7': F32, m11': F32, m15': F32) =>
+    m0 = m0'
+    m4 = m4'
+    m8 = m8'
+    m12 = m12'
+    m1 = m1'
+    m5 = m5'
+    m9 = m9'
+    m13 = m13'
+    m2 = m2'
+    m6 = m6'
+    m10 = m10'
+    m14 = m14'
+    m3 = m3'
+    m7 = m7'
+    m11 = m11'
+    m15 = m15'
+
+struct Color
+  let r: U8
+  let g: U8
+  let b: U8
+  let a: U8
+
+  new create(r': U8, g': U8, b': U8, a': U8) =>
+    r = r'
+    g = g'
+    b = b'
+    a = a'
+
+struct Rectangle
+  let x: F32
+  let y: F32
+  let width: F32
+  let height: F32
+
+  new create(x': F32, y': F32, width': F32, height': F32) =>
+    x = x'
+    y = y'
+    width = width'
+    height = height'
+
+struct Image
+  let data: Pointer[None]
+  let width: I32
+  let height: I32
+  let mipmaps: I32
+  let format: I32
+
+  new create(data': Pointer[None], width': I32, height': I32, mipmaps': I32, format': I32) =>
+    data = data'
+    width = width'
+    height = height'
+    mipmaps = mipmaps'
+    format = format'
+
+struct Texture
+  let id: U32
+  let width: I32
+  let height: I32
+  let mipmaps: I32
+  let format: I32
+
+  new create(id': U32, width': I32, height': I32, mipmaps': I32, format': I32) =>
+    id = id'
+    width = width'
+    height = height'
+    mipmaps = mipmaps'
+    format = format'
+
+struct RenderTexture
+  let id: U32
+  let texture: Texture
+  let depth: Texture
+
+  new create(id': U32, texture': Texture, depth': Texture) =>
+    id = id'
+    texture = texture'
+    depth = depth'
+
+struct NPatchInfo
+  let source: Rectangle
+  let left: I32
+  let top: I32
+  let right: I32
+  let bottom: I32
+  let layout: I32
+
+  new create(source': Rectangle, left': I32, top': I32, right': I32, bottom': I32, layout': I32) =>
+    source = source'
+    left = left'
+    top = top'
+    right = right'
+    bottom = bottom'
+    layout = layout'
+
+struct GlyphInfo
+  let value: I32
+  let offset_x: I32
+  let offset_y: I32
+  let advance_x: I32
+  let image: Image
+
+  new create(value': I32, offset_x': I32, offset_y': I32, advance_x': I32, image': Image) =>
+    value = value'
+    offset_x = offset_x'
+    offset_y = offset_y'
+    advance_x = advance_x'
+    image = image'
+
+struct Font
+  let base_size: I32
+  let glyph_count: I32
+  let glyph_padding: I32
+  let texture: Texture2D
+  let recs: Array[Rectangle]
+  let glyphs: Array[GlyphInfo]
+
+  new create(base_size': I32, glyph_count': I32, glyph_padding': I32, texture': Texture2D, recs': Array[Rectangle], glyphs': Array[GlyphInfo]) =>
+    base_size = base_size'
+    glyph_count = glyph_count'
+    glyph_padding = glyph_padding'
+    texture = texture'
+    recs = recs'
+    glyphs = glyphs'
+
+struct Camera3D
+  let position: Vector3
+  let target: Vector3
+  let up: Vector3
+  let fovy: F32
+  let projection: I32
+
+  new create(position': Vector3, target': Vector3, up': Vector3, fovy': F32, projection': I32) =>
+    position = position'
+    target = target'
+    up = up'
+    fovy = fovy'
+    projection = projection'
+
+struct Camera2D
+  let offset: Vector2
+  let target: Vector2
+  let rotation: F32
+  let zoom: F32
+
+  new create(offset': Vector2, target': Vector2, rotation': F32, zoom': F32) =>
+    offset = offset'
+    target = target'
+    rotation = rotation'
+    zoom = zoom'
+
+struct Mesh
+  let vertex_count: I32
+  let triangle_count: I32
+  let vertices: Array[F32]
+  let texcoords: Array[F32]
+  let texcoords2: Array[F32]
+  let normals: Array[F32]
+  let tangents: Array[F32]
+  let colors: String
+  let indices: Array[unsignedshort]
+  let anim_vertices: Array[F32]
+  let anim_normals: Array[F32]
+  let bone_ids: String
+  let bone_weights: Array[F32]
+  let vao_id: U32
+  let vbo_id: Array[unsignedint]
+
+  new create(vertex_count': I32, triangle_count': I32, vertices': Array[F32], texcoords': Array[F32], texcoords2': Array[F32], normals': Array[F32], tangents': Array[F32], colors': String, indices': Array[unsignedshort], anim_vertices': Array[F32], anim_normals': Array[F32], bone_ids': String, bone_weights': Array[F32], vao_id': U32, vbo_id': Array[unsignedint]) =>
+    vertex_count = vertex_count'
+    triangle_count = triangle_count'
+    vertices = vertices'
+    texcoords = texcoords'
+    texcoords2 = texcoords2'
+    normals = normals'
+    tangents = tangents'
+    colors = colors'
+    indices = indices'
+    anim_vertices = anim_vertices'
+    anim_normals = anim_normals'
+    bone_ids = bone_ids'
+    bone_weights = bone_weights'
+    vao_id = vao_id'
+    vbo_id = vbo_id'
+
+struct Shader
+  let id: U32
+  let locs: Array[I32]
+
+  new create(id': U32, locs': Array[I32]) =>
+    id = id'
+    locs = locs'
+
+struct MaterialMap
+  let texture: Texture2D
+  let color: Color
+  let value: F32
+
+  new create(texture': Texture2D, color': Color, value': F32) =>
+    texture = texture'
+    color = color'
+    value = value'
+
+struct Material
+  let shader: Shader
+  let maps: Array[MaterialMap]
+  let params: Array[F32]
+
+  new create(shader': Shader, maps': Array[MaterialMap], params': Array[F32]) =>
+    shader = shader'
+    maps = maps'
+    params = params'
+
+struct Transform
+  let translation: Vector3
+  let rotation: Quaternion
+  let scale: Vector3
+
+  new create(translation': Vector3, rotation': Quaternion, scale': Vector3) =>
+    translation = translation'
+    rotation = rotation'
+    scale = scale'
+
+struct BoneInfo
+  let name: Array[U8]
+  let parent: I32
+
+  new create(name': Array[U8], parent': I32) =>
+    name = name'
+    parent = parent'
+
+struct Model
+  let transform: Matrix
+  let mesh_count: I32
+  let material_count: I32
+  let meshes: Array[Mesh]
+  let materials: Array[Material]
+  let mesh_material: Array[I32]
+  let bone_count: I32
+  let bones: Array[BoneInfo]
+  let bind_pose: Array[Transform]
+
+  new create(transform': Matrix, mesh_count': I32, material_count': I32, meshes': Array[Mesh], materials': Array[Material], mesh_material': Array[I32], bone_count': I32, bones': Array[BoneInfo], bind_pose': Array[Transform]) =>
+    transform = transform'
+    mesh_count = mesh_count'
+    material_count = material_count'
+    meshes = meshes'
+    materials = materials'
+    mesh_material = mesh_material'
+    bone_count = bone_count'
+    bones = bones'
+    bind_pose = bind_pose'
+
+struct ModelAnimation
+  let bone_count: I32
+  let frame_count: I32
+  let bones: Array[BoneInfo]
+  let frame_poses: Array[Array[Transform]]
+  let name: Array[U8]
+
+  new create(bone_count': I32, frame_count': I32, bones': Array[BoneInfo], frame_poses': Array[Array[Transform]], name': Array[U8]) =>
+    bone_count = bone_count'
+    frame_count = frame_count'
+    bones = bones'
+    frame_poses = frame_poses'
+    name = name'
+
+struct Ray
+  let position: Vector3
+  let direction: Vector3
+
+  new create(position': Vector3, direction': Vector3) =>
+    position = position'
+    direction = direction'
+
+struct RayCollision
+  let hit: Bool
+  let distance: F32
+  let point: Vector3
+  let normal: Vector3
+
+  new create(hit': Bool, distance': F32, point': Vector3, normal': Vector3) =>
+    hit = hit'
+    distance = distance'
+    point = point'
+    normal = normal'
+
+struct BoundingBox
+  let min: Vector3
+  let max: Vector3
+
+  new create(min': Vector3, max': Vector3) =>
+    min = min'
+    max = max'
+
+struct Wave
+  let frame_count: U32
+  let sample_rate: U32
+  let sample_size: U32
+  let channels: U32
+  let data: Pointer[None]
+
+  new create(frame_count': U32, sample_rate': U32, sample_size': U32, channels': U32, data': Pointer[None]) =>
+    frame_count = frame_count'
+    sample_rate = sample_rate'
+    sample_size = sample_size'
+    channels = channels'
+    data = data'
+
+struct AudioStream
+  let buffer: Array[rAudioBuffer]
+  let processor: Array[rAudioProcessor]
+  let sample_rate: U32
+  let sample_size: U32
+  let channels: U32
+
+  new create(buffer': Array[rAudioBuffer], processor': Array[rAudioProcessor], sample_rate': U32, sample_size': U32, channels': U32) =>
+    buffer = buffer'
+    processor = processor'
+    sample_rate = sample_rate'
+    sample_size = sample_size'
+    channels = channels'
+
+struct Sound
+  let stream: AudioStream
+  let frame_count: U32
+
+  new create(stream': AudioStream, frame_count': U32) =>
+    stream = stream'
+    frame_count = frame_count'
+
+struct Music
+  let stream: AudioStream
+  let frame_count: U32
+  let looping: Bool
+  let ctx_type: I32
+  let ctx_data: Pointer[None]
+
+  new create(stream': AudioStream, frame_count': U32, looping': Bool, ctx_type': I32, ctx_data': Pointer[None]) =>
+    stream = stream'
+    frame_count = frame_count'
+    looping = looping'
+    ctx_type = ctx_type'
+    ctx_data = ctx_data'
+
+struct VrDeviceInfo
+  let h_resolution: I32
+  let v_resolution: I32
+  let h_screen_size: F32
+  let v_screen_size: F32
+  let v_screen_center: F32
+  let eye_to_screen_distance: F32
+  let lens_separation_distance: F32
+  let interpupillary_distance: F32
+  let lens_distortion_values: Array[F32]
+  let chroma_ab_correction: Array[F32]
+
+  new create(h_resolution': I32, v_resolution': I32, h_screen_size': F32, v_screen_size': F32, v_screen_center': F32, eye_to_screen_distance': F32, lens_separation_distance': F32, interpupillary_distance': F32, lens_distortion_values': Array[F32], chroma_ab_correction': Array[F32]) =>
+    h_resolution = h_resolution'
+    v_resolution = v_resolution'
+    h_screen_size = h_screen_size'
+    v_screen_size = v_screen_size'
+    v_screen_center = v_screen_center'
+    eye_to_screen_distance = eye_to_screen_distance'
+    lens_separation_distance = lens_separation_distance'
+    interpupillary_distance = interpupillary_distance'
+    lens_distortion_values = lens_distortion_values'
+    chroma_ab_correction = chroma_ab_correction'
+
+struct VrStereoConfig
+  let projection: Array[Matrix]
+  let view_offset: Array[Matrix]
+  let left_lens_center: Array[F32]
+  let right_lens_center: Array[F32]
+  let left_screen_center: Array[F32]
+  let right_screen_center: Array[F32]
+  let scale: Array[F32]
+  let scale_in: Array[F32]
+
+  new create(projection': Array[Matrix], view_offset': Array[Matrix], left_lens_center': Array[F32], right_lens_center': Array[F32], left_screen_center': Array[F32], right_screen_center': Array[F32], scale': Array[F32], scale_in': Array[F32]) =>
+    projection = projection'
+    view_offset = view_offset'
+    left_lens_center = left_lens_center'
+    right_lens_center = right_lens_center'
+    left_screen_center = left_screen_center'
+    right_screen_center = right_screen_center'
+    scale = scale'
+    scale_in = scale_in'
+
+struct FilePathList
+  let capacity: U32
+  let count: U32
+  let paths: Array[Array[U8]]
+
+  new create(capacity': U32, count': U32, paths': Array[Array[U8]]) =>
+    capacity = capacity'
+    count = count'
+    paths = paths'
+
+struct AutomationEvent
+  let frame: U32
+  let typ: U32
+  let params: Array[I32]
+
+  new create(frame': U32, typ': U32, params': Array[I32]) =>
+    frame = frame'
+    typ = typ'
+    params = params'
+
+struct AutomationEventList
+  let capacity: U32
+  let count: U32
+  let events: Array[AutomationEvent]
+
+  new create(capacity': U32, count': U32, events': Array[AutomationEvent]) =>
+    capacity = capacity'
+    count = count'
+    events = events'
