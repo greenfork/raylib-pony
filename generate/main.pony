@@ -4,10 +4,6 @@ use "debug"
 use "itertools"
 use "strings"
 
-use @exit[None](status: U8)
-use @fprintf[I32](stream: Pointer[U8] tag, fmt: Pointer[U8] tag, ...)
-use @pony_os_stderr[Pointer[U8]]()
-
 actor Main
   new create(env: Env) =>
     let api_file_path' = "raylib_src/parser/output/raylib_api.json"
@@ -31,34 +27,47 @@ actor Main
 
     let target_file_path' = "raylib/raylib.pony"
     let target_file_path = FilePath(FileAuth(env.root), target_file_path')
+    let c_file_path' = "src/shims.c"
+    let c_file_path = FilePath(FileAuth(env.root), c_file_path')
 
-    let generator = Generator(consume api, target_file_path, env.err)
+    let generator =
+      try
+        Generator(consume api, target_file_path, c_file_path, env.err)?
+      else
+        env.err.print("Unable to open a file for writing")
+        return
+      end
     generator.gen_common()
+    generator.gen_functions()
     generator.gen_enums()
 
 class Generator
+  let _err: OutStream
   let _api: JsonDoc ref
   let _file: File
-  let _err: OutStream
+  let _cfile: File
 
-  new create(api: JsonDoc iso, target_file_path: FilePath, err: OutStream) =>
+  new create(api: JsonDoc iso, target_file_path: FilePath,
+    c_file_path: FilePath, err: OutStream) ?
+  =>
     _api = consume api
     _err = err
     _file = File(target_file_path)
-
-    // The only way to do error handling with files currently.
-    if not (_file.errno() is FileOK) then
-      @fprintf(
-        @pony_os_stderr(),
-        "Unable to open a target file '%s' for writing\n".cstring(),
-        target_file_path.path.cstring())
-      @exit(1)
-    end
+    if not (_file.errno() is FileOK) then error end
+    _cfile = File(c_file_path)
+    if not (_cfile.errno() is FileOK) then _file.dispose(); error end
 
   fun ref gen_common() =>
     _file.write("""
     use "collections"
     """)
+
+  fun ref gen_functions() =>
+    // void*
+    // deref_color(void** ptr) {
+    // 	return *ptr;
+    // };
+    None
 
   fun ref gen_enums() =>
     try
