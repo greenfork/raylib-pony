@@ -1147,3 +1147,9 @@ struct AutomationEventList
     capacity = capacity'
     count = count'
     events = events'
+
+type Quaternion is Vector4
+type Texture2D is Texture
+type TextureCubemap is Texture
+type RenderTexture2D is RenderTexture
+type Camera is Camera3D

@@ -51,6 +51,12 @@ actor Main
       env.err.print("Unable to generate structs")
       return
     end
+    try
+      generator.gen_aliases()?
+    else
+      env.err.print("Unable to generate aliases")
+      return
+    end
 
 class Generator
   let _json: JsonObject
@@ -112,6 +118,16 @@ class Generator
         fields.push((Idents.camel_to_snake(field_name), pony_field_type))
       end
       gen.generate(struct_name, fields)
+    end
+
+  fun ref gen_aliases() ? =>
+    let gen = AliasGenerator(_file)
+    let aliases = _json.data("aliases")? as JsonArray
+    for alias' in aliases.data.values() do
+      let alias = alias' as JsonObject
+      let alias_name = alias.data("name")? as String
+      let alias_type = alias.data("type")? as String
+      gen.generate(alias_name, alias_type)
     end
 
 type EnumValues is Array[(String val, I64)]
@@ -179,6 +195,15 @@ class StructGenerator
     for (name, typ) in fields.values() do
       _file.queue("    " + name + " = " + name + "'\n")
     end
+    _file.flush()
+
+class AliasGenerator
+  let _file: File
+
+  new create(file: File) => _file = file
+
+  fun ref generate(alias_name: String, alias_type: String) =>
+    _file.queue("\ntype " + alias_name + " is " + alias_type)
     _file.flush()
 
 primitive ASCII
