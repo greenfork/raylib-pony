@@ -33,7 +33,7 @@ actor Main
       try
         Generator(consume api, target_file_path, c_file_path)?
       else
-        env.err.print("Unable to open a file for writing")
+        env.err.print("Unable to initialize the generator")
         return
       end
     generator.gen_common()
@@ -56,10 +56,10 @@ class Generator
   let _file: File
   let _cfile: File
 
-  new create(api: JsonDoc iso, target_file_path: FilePath,
+  new create(api: JsonDoc, target_file_path: FilePath,
     c_file_path: FilePath) ?
   =>
-    _json = (consume ref api).data as JsonObject
+    _json = api.data as JsonObject
     _file = File(target_file_path)
     if not (_file.errno() is FileOK) then error end
     _cfile = File(c_file_path)
