@@ -2,7 +2,6 @@ use "files"
 use "json"
 use "debug"
 use "itertools"
-use "strings"
 
 actor Main
   new create(env: Env) =>
@@ -39,7 +38,12 @@ actor Main
       end
     generator.gen_common()
     generator.gen_functions()
-    generator.gen_enums()
+    try
+      generator.gen_enums()?
+    else
+      env.err.print("Unable to generate enums")
+      return
+    end
 
 class Generator
   let _err: OutStream
@@ -69,70 +73,64 @@ class Generator
     // };
     None
 
-  fun ref gen_enums() =>
-    try
-      let json = _api.data as JsonObject
-      let enums = json.data("enums")? as JsonArray
-      for enum' in enums.data.values() do
-        let enum = enum' as JsonObject
-        let enum_name = enum.data("name")? as String
-        let values' = enum.data("values")? as JsonArray
-        // let value_names =
-        //   Iter[JsonType](values'.data.values())
-        //   .map[String]({(value) =>
-        //     try
-        //       let v = value as JsonObject
-        //       v.data("name")? as String
-        //     else
-        //       ""
-        //     end
-        //   })
-        //   .collect(Array[String])
-        // let prefix' = CommonPrefix(prefixed_names)
-        // let prefix: String val = consume prefix'
-        // Debug("Common prefix: " + prefix)
-        let values = Array[(String, I64)]
-        for value' in values'.data.values() do
-          let value_obj = value' as JsonObject
-          let value_name' = value_obj.data("name")? as String
-          // let value_name =
-          //   Idents.upper_to_pascal(value_name'.trim(prefix.size()))
-          let value_name = Idents.upper_to_pascal(value_name')
-          let value = value_obj.data("value")? as I64
-          values.push((value_name, value))
-        end
-        if (enum_name == "ConfigFlags") or (enum_name == "Gesture") then
-          for (n, v) in values.values() do
-            _file.queue(
-              "primitive " + n + " fun value(): U32 => " + v.string() + "\n"
-            )
-          end
-          var first_flag = true
-          _file.queue("\ntype " + enum_name + " is Flags [\n")
-          for (n, v) in values.values() do
-            _file.queue("  " + if first_flag then "( " else "| " end + n + "\n")
-            first_flag = false
-          end
-          _file.queue("), U32]\n\n")
-        else
-          for (n, v) in values.values() do
-            _file.queue(
-              "primitive " + n + " fun apply(): I32 => " + v.string() + "\n"
-            )
-          end
-          var first_flag = true
-          _file.queue("\ntype " + enum_name + " is\n")
-          for (n, v) in values.values() do
-            _file.queue("  " + if first_flag then "( " else "| " end + n + "\n")
-            first_flag = false
-          end
-          _file.queue(")\n\n")
-        end
-        _file.flush()
+  fun ref gen_enums() ? =>
+    let gen = EnumGenerator(_file, _cfile)
+    let json = _api.data as JsonObject
+    let enums = json.data("enums")? as JsonArray
+    for enum' in enums.data.values() do
+      let enum = enum' as JsonObject
+      let enum_name = enum.data("name")? as String
+      let values' = enum.data("values")? as JsonArray
+      let values = EnumValues
+      for value' in values'.data.values() do
+        let value_obj = value' as JsonObject
+        let value_name' = value_obj.data("name")? as String
+        let value_name = Idents.upper_to_pascal(value_name')
+        let value = value_obj.data("value")? as I64
+        values.push((value_name, value))
       end
-    else
-      _err.print("Unable to generate enums")
+      gen.generate(enum_name, values)
     end
+
+type EnumValues is Array[(String val, I64)]
+
+class EnumGenerator
+  let _file: File
+  let _cfile: File
+
+  new create(file: File, cfile: File) =>
+    _file = file
+    _cfile = cfile
+
+  fun ref generate(enum_name: String val, values: EnumValues) =>
+    if (enum_name == "ConfigFlags") or (enum_name == "Gesture") then
+      for (n, v) in values.values() do
+        _file.queue(
+          "primitive " + n + " fun value(): U32 => " + v.string() + "\n"
+        )
+      end
+      var first_flag = true
+      _file.queue("\ntype " + enum_name + " is Flags [\n")
+      for (n, v) in values.values() do
+        _file.queue("  " + if first_flag then "( " else "| " end + n + "\n")
+        first_flag = false
+      end
+      _file.queue("), U32]\n\n")
+    else
+      for (n, v) in values.values() do
+        _file.queue(
+          "primitive " + n + " fun apply(): I32 => " + v.string() + "\n"
+        )
+      end
+      var first_flag = true
+      _file.queue("\ntype " + enum_name + " is\n")
+      for (n, v) in values.values() do
+        _file.queue("  " + if first_flag then "( " else "| " end + n + "\n")
+        first_flag = false
+      end
+      _file.queue(")\n\n")
+    end
+    _file.flush()
 
 primitive Idents
   // MSAA_4X_HINT => Msaa4xHint
