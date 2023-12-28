@@ -31,7 +31,7 @@ actor Main
 
     let generator =
       try
-        Generator(consume api, target_file_path, c_file_path, env.err)?
+        Generator(consume api, target_file_path, c_file_path)?
       else
         env.err.print("Unable to open a file for writing")
         return
@@ -44,18 +44,22 @@ actor Main
       env.err.print("Unable to generate enums")
       return
     end
+    try
+      generator.gen_structs()?
+    else
+      env.err.print("Unable to generate structs")
+      return
+    end
 
 class Generator
-  let _err: OutStream
-  let _api: JsonDoc ref
+  let _json: JsonObject
   let _file: File
   let _cfile: File
 
   new create(api: JsonDoc iso, target_file_path: FilePath,
-    c_file_path: FilePath, err: OutStream) ?
+    c_file_path: FilePath) ?
   =>
-    _api = consume api
-    _err = err
+    _json = (consume ref api).data as JsonObject
     _file = File(target_file_path)
     if not (_file.errno() is FileOK) then error end
     _cfile = File(c_file_path)
@@ -75,8 +79,7 @@ class Generator
 
   fun ref gen_enums() ? =>
     let gen = EnumGenerator(_file, _cfile)
-    let json = _api.data as JsonObject
-    let enums = json.data("enums")? as JsonArray
+    let enums = _json.data("enums")? as JsonArray
     for enum' in enums.data.values() do
       let enum = enum' as JsonObject
       let enum_name = enum.data("name")? as String
@@ -91,6 +94,9 @@ class Generator
       end
       gen.generate(enum_name, values)
     end
+
+  fun ref gen_structs() ? =>
+    let structs = _json.data("structs")? as JsonArray
 
 type EnumValues is Array[(String val, I64)]
 
