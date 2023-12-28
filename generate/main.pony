@@ -104,9 +104,10 @@ class Generator
       let fields = FieldValues
       for field' in fields'.data.values() do
         let field = field' as JsonObject
-        let field_type = field.data("type")? as String
         let field_name = field.data("name")? as String
-        fields.push((field_name, field_type))
+        let c_field_type = field.data("type")? as String
+        let pony_field_type = Types.c_to_pony(c_field_type)?
+        fields.push((field_name, pony_field_type))
       end
     end
 
@@ -168,3 +169,70 @@ primitive Idents
         str
       end
     }
+
+primitive Types
+  fun c_to_pony(s: String val): String val ? =>
+    try
+      Types._c_to_pony_hardcoded(s)?
+    else
+      if Stringx.ends_with(s, '*') then
+        // BoneInfo *
+        let parts = recover ref s.split(" ") end
+        if parts.size() < 2 then
+          Debug("parts size is less than two for '" + s + "'")
+          error
+        end
+        let typ' = String.join(parts.slice(0, parts.size() - 1).values())
+        let typ: String val = consume typ'
+        let stars = parts(parts.size() - 1)?
+        // Debug("s: '" + s + "', typ: '" + typ + "', stars: '" + stars + "'")
+        match stars
+        | "*" => "Array[" + c_to_pony(typ)? + "]"
+        | "**" => "Array[Array[ " + c_to_pony(typ)? + "]]"
+        else
+          Debug("Ends with star but is '" + s + "'")
+          error
+        end
+      elseif Stringx.ends_with(s, ']') then
+        // char[32]
+        (let base_type', let array_part') = s.clone().chop(s.find("[")?.usize())
+        let base_type: String val = consume base_type'
+        let array_part: String ref = consume array_part'
+        array_part.trim_in_place(1, array_part.size() - 1)
+        let num =
+          try
+            array_part.u32()?
+          else
+            Debug("Failed to read a number: '" + array_part + "'")
+            error
+          end
+        "Array[" + base_type + "]"
+      else
+        s
+      end
+    end
+
+  fun _c_to_pony_hardcoded(s: String val): String val ? =>
+    match s
+    | "float" => "F32"
+    | "int" => "I32"
+    | "unsigned char" => "U8"
+    | "void *" => "Pointer[None]"
+    | "unsigned int" => "U32"
+    | "unsigned char *" => "String"
+    | "bool" => "Bool"
+    | "char" => "U8"
+    else
+      // Debug("Not hardcoded type '" + s + "'")
+      error
+    end
+
+primitive Stringx
+  fun ends_with(s: String box, c: U8): Bool =>
+    if s.size() == 0 then return false end
+    try
+      s(s.size() - 1)? == c
+    else
+      Debug("_ends_with failed")
+      false
+    end
