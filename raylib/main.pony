@@ -13,6 +13,9 @@ use @WindowShouldClose[Bool]()
 
 use @deref_color[CColor](ptr: Color)
 
+primitive NPatchLayout
+  fun nine_patch(): I32 => 0
+
 primitive CColor
 
 struct val Color
