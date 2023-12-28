@@ -78,7 +78,7 @@ class Generator
     None
 
   fun ref gen_enums() ? =>
-    let gen = EnumGenerator(_file, _cfile)
+    let gen = EnumGenerator(_file)
     let enums = _json.data("enums")? as JsonArray
     for enum' in enums.data.values() do
       let enum = enum' as JsonObject
@@ -102,11 +102,8 @@ type EnumValues is Array[(String val, I64)]
 
 class EnumGenerator
   let _file: File
-  let _cfile: File
 
-  new create(file: File, cfile: File) =>
-    _file = file
-    _cfile = cfile
+  new create(file: File) => _file = file
 
   fun ref generate(enum_name: String val, values: EnumValues) =>
     if (enum_name == "ConfigFlags") or (enum_name == "Gesture") then
