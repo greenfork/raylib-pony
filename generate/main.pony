@@ -97,8 +97,21 @@ class Generator
 
   fun ref gen_structs() ? =>
     let structs = _json.data("structs")? as JsonArray
+    for struct' in structs.data.values() do
+      let str = struct' as JsonObject
+      let struct_name = str.data("name")? as String
+      let fields' = str.data("fields")? as JsonArray
+      let fields = FieldValues
+      for field' in fields'.data.values() do
+        let field = field' as JsonObject
+        let field_type = field.data("type")? as String
+        let field_name = field.data("name")? as String
+        fields.push((field_name, field_type))
+      end
+    end
 
 type EnumValues is Array[(String val, I64)]
+type FieldValues is Array[(String val, String val)]
 
 class EnumGenerator
   let _file: File
