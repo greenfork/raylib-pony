@@ -112,7 +112,7 @@ class Generator
     let enums = _json.data("enums")? as JsonArray
     for enum' in enums.data.values() do
       let enum = enum' as JsonObject
-      let enum_name = enum.data("name")? as String
+      let name = enum.data("name")? as String
       let values' = enum.data("values")? as JsonArray
       let values = EnumValues
       for value' in values'.data.values() do
@@ -122,7 +122,7 @@ class Generator
         let value = value_obj.data("value")? as I64
         values.push((value_name, value))
       end
-      gen.generate(enum_name, values)
+      gen.generate(name, values)
     end
 
   fun ref gen_structs() ? =>
@@ -131,7 +131,7 @@ class Generator
     let structs = _json.data("structs")? as JsonArray
     for struct' in structs.data.values() do
       let str = struct' as JsonObject
-      let struct_name = str.data("name")? as String
+      let name = str.data("name")? as String
       let fields' = str.data("fields")? as JsonArray
       let fields = FieldValues
       for field' in fields'.data.values() do
@@ -141,7 +141,7 @@ class Generator
         let pony_field_type = Types.c_to_pony(c_field_type)?
         fields.push((Idents.camel_to_snake(field_name), pony_field_type))
       end
-      gen.generate(struct_name, fields)
+      gen.generate(name, fields)
     end
 
   fun ref gen_aliases() ? =>
@@ -149,9 +149,9 @@ class Generator
     let aliases = _json.data("aliases")? as JsonArray
     for alias' in aliases.data.values() do
       let alias = alias' as JsonObject
-      let alias_name = alias.data("name")? as String
-      let alias_type = alias.data("type")? as String
-      gen.generate(alias_name, alias_type)
+      let name = alias.data("name")? as String
+      let typ = alias.data("type")? as String
+      gen.generate(name, typ)
     end
 
 type EnumValues is Array[(String val, I64)]
@@ -233,8 +233,8 @@ class AliasGenerator
 
   new create(file: File) => _file = file
 
-  fun ref generate(alias_name: String, alias_type: String) =>
-    _file.write("\ntype " + alias_name + " is " + alias_type)
+  fun ref generate(name: String, typ: String) =>
+    _file.write("\ntype " + name + " is " + typ)
 
 primitive ASCII
   fun upper(c: U8): U8 =>
