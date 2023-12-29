@@ -14,13 +14,11 @@ class Game
   new create(window: Window) => _window = window
 
   fun ref apply() =>
-    let black = Color(0, 0, 0, 0xff)
-    let white = Color(0xff, 0xff, 0xff, 0xff)
     with dc = _window.begin_drawing() do
-      dc.clear_background(white)
+      dc.clear_background(Colors.ray_white())
       dc.draw_fps(10, 10)
       dc.draw_text("Congrats! You created your first window!",
-        190, 200, 20, black)
+        190, 200, 20, Colors.black())
     end
 
     if not _window.should_close() then apply() end

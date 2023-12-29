@@ -55,21 +55,28 @@ actor Main
       try
         generator.gen_enums()?
       else
-        env.err.print("Unable to generate enums")
+        env.err.print("Unable to initialize enum generator")
         return
       end
     let struct_generator =
       try
         generator.gen_structs()?
       else
-        env.err.print("Unable to generate structs")
+        env.err.print("Unable to initialize struct generator")
         return
       end
     let alias_generator =
       try
         generator.gen_aliases()?
       else
-        env.err.print("Unable to generate aliases")
+        env.err.print("Unable to initialize alias generator")
+        return
+      end
+    let color_generator =
+      try
+        generator.gen_colors()?
+      else
+        env.err.print("Unable to initialize color generator")
         return
       end
 
@@ -81,6 +88,7 @@ actor Main
     struct_generator.generate_statements()
     struct_generator.generate_type_stubs()
     alias_generator.generate_statements()
+    color_generator.generate_statements()
 
     struct_generator.generate_c()
 
@@ -181,6 +189,18 @@ class Generator
       let name = alias.data("name")? as String
       let type' = alias.data("type")? as String
       gen.add((name, type'))
+    end
+    gen
+
+  fun ref gen_colors(): ColorGenerator ? =>
+    let gen = ColorGenerator(_file)
+    let defines = _json.data("defines")? as JsonArray
+    for define' in defines.data.values() do
+      let define = define' as JsonObject
+      if (define.data("type")? as String) != "COLOR" then continue end
+      let name = Idents.color_to_pony(define.data("name")? as String)
+      let value = define.data("value")? as String
+      gen.add((name, value))
     end
     gen
 
@@ -341,6 +361,26 @@ class AliasGenerator
       _file.write("\ntype " + name + " is " + type')
     end
 
+type ColorDesc is (String val, String val)
+class ColorGenerator
+  let _file: File
+  let _colors: Array[ColorDesc] = Array[ColorDesc]
+
+  new create(file: File) => _file = file
+
+  fun ref add(desc: ColorDesc) => _colors.push(desc)
+
+  fun ref generate_statements() =>
+    _file.queue("\nprimitive Colors")
+    for (name, value') in _colors.values() do
+      // value' is similar to: CLITERAL(Color){ 0, 228, 48, 255 }
+      // "CLITERAL(Color){ ".size() == 17; " }".size() == 2
+      let value = value'.trim(17, value'.size() - 2)
+      _file.queue("\n  fun " + name + "(): Color => Color(" + value + ")")
+    end
+    _file.queue("\n")
+    _file.flush()
+
 primitive ASCII
   fun upper(c: U8): U8 =>
     if (c >= 0x61) and (c <= 0x7A) then c - 0x20 else c end
@@ -389,6 +429,18 @@ primitive Idents
     | "end" => "end'"
     | "box" => "box'"
     else s
+    end
+
+  fun color_to_pony(s: String val): String val =>
+    match s
+    | "LIGHTGRAY" => "light_gray"
+    | "DARKGRAY" => "dark_gray"
+    | "DARKGREEN" => "dark_green"
+    | "SKYBLUE" => "sky_blue"
+    | "DARKPURPLE" => "dark_purple"
+    | "DARKBROWN" => "dark_brown"
+    | "RAYWHITE" => "ray_white"
+    else s.lower()
     end
 
 primitive Types
