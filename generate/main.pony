@@ -38,7 +38,12 @@ actor Main
         return
       end
     generator.gen_common()
-    generator.gen_functions()
+    try
+      generator.gen_functions()?
+    else
+      env.err.print("Unable to generate functions")
+      return
+    end
     try
       generator.gen_enums()?
     else
@@ -77,12 +82,30 @@ class Generator
     use "collections"
     """)
 
-  fun ref gen_functions() =>
+  fun ref gen_functions() ? =>
     // void*
     // deref_color(void** ptr) {
     // 	return *ptr;
     // };
-    None
+    let functions = _json.data("functions")? as JsonArray
+    for function' in functions.data.values() do
+      let function = function' as JsonObject
+      let name = function.data("name")? as String
+      let return_type = function.data("returnType")? as String
+      let params' =
+        try
+          (function.data("params")? as JsonArray).data
+        else
+          [as JsonType:]
+        end
+      let params = FunctionParams
+      for param' in params'.values() do
+        let param = param' as JsonObject
+        let param_name = param.data("name")? as String
+        let param_type = param.data("type")? as String
+        params.push((param_name, param_type))
+      end
+    end
 
   fun ref gen_enums() ? =>
     let gen = EnumGenerator(_file)
@@ -133,6 +156,7 @@ class Generator
 
 type EnumValues is Array[(String val, I64)]
 type FieldValues is Array[(String val, String val)]
+type FunctionParams is Array[(String val, String val)]
 
 class EnumGenerator
   let _file: File
@@ -306,7 +330,7 @@ primitive Types
     | "float" => "F32"
     | "int" => "I32"
     | "unsigned char" => "U8"
-    | "void *" => "Pointer[None]"
+    | "void" => "None"
     | "unsigned int" => "U32"
     | "unsigned char *" => "String"
     | "bool" => "Bool"
