@@ -1,4 +1,557 @@
 use "collections"
+use @InitWindow[None](width: I32, height: I32, title: Pointer[U8] tag)
+use @CloseWindow[None]()
+use @WindowShouldClose[Bool]()
+use @IsWindowReady[Bool]()
+use @IsWindowFullscreen[Bool]()
+use @IsWindowHidden[Bool]()
+use @IsWindowMinimized[Bool]()
+use @IsWindowMaximized[Bool]()
+use @IsWindowFocused[Bool]()
+use @IsWindowResized[Bool]()
+use @IsWindowState[Bool](flag: U32)
+use @SetWindowState[None](flags: U32)
+use @ClearWindowState[None](flags: U32)
+use @ToggleFullscreen[None]()
+use @ToggleBorderlessWindowed[None]()
+use @MaximizeWindow[None]()
+use @MinimizeWindow[None]()
+use @RestoreWindow[None]()
+use @SetWindowIcon[None](image: Image)
+use @SetWindowIcons[None](images: Pointer[Image] tag, count: I32)
+use @SetWindowTitle[None](title: Pointer[U8] tag)
+use @SetWindowPosition[None](x: I32, y: I32)
+use @SetWindowMonitor[None](monitor: I32)
+use @SetWindowMinSize[None](width: I32, height: I32)
+use @SetWindowMaxSize[None](width: I32, height: I32)
+use @SetWindowSize[None](width: I32, height: I32)
+use @SetWindowOpacity[None](opacity: F32)
+use @SetWindowFocused[None]()
+use @GetWindowHandle[Pointer[None] tag]()
+use @GetScreenWidth[I32]()
+use @GetScreenHeight[I32]()
+use @GetRenderWidth[I32]()
+use @GetRenderHeight[I32]()
+use @GetMonitorCount[I32]()
+use @GetCurrentMonitor[I32]()
+use @GetMonitorPosition[Vector2](monitor: I32)
+use @GetMonitorWidth[I32](monitor: I32)
+use @GetMonitorHeight[I32](monitor: I32)
+use @GetMonitorPhysicalWidth[I32](monitor: I32)
+use @GetMonitorPhysicalHeight[I32](monitor: I32)
+use @GetMonitorRefreshRate[I32](monitor: I32)
+use @GetWindowPosition[Vector2]()
+use @GetWindowScaleDPI[Vector2]()
+use @GetMonitorName[Pointer[U8] tag](monitor: I32)
+use @SetClipboardText[None](text: Pointer[U8] tag)
+use @GetClipboardText[Pointer[U8] tag]()
+use @EnableEventWaiting[None]()
+use @DisableEventWaiting[None]()
+use @ShowCursor[None]()
+use @HideCursor[None]()
+use @IsCursorHidden[Bool]()
+use @EnableCursor[None]()
+use @DisableCursor[None]()
+use @IsCursorOnScreen[Bool]()
+use @ClearBackground[None](color: Color)
+use @BeginDrawing[None]()
+use @EndDrawing[None]()
+use @BeginMode2D[None](camera: Camera2D)
+use @EndMode2D[None]()
+use @BeginMode3D[None](camera: Camera3D)
+use @EndMode3D[None]()
+use @BeginTextureMode[None](target: RenderTexture2D)
+use @EndTextureMode[None]()
+use @BeginShaderMode[None](shader: Shader)
+use @EndShaderMode[None]()
+use @BeginBlendMode[None](mode: I32)
+use @EndBlendMode[None]()
+use @BeginScissorMode[None](x: I32, y: I32, width: I32, height: I32)
+use @EndScissorMode[None]()
+use @BeginVrStereoMode[None](config: VrStereoConfig)
+use @EndVrStereoMode[None]()
+use @LoadVrStereoConfig[VrStereoConfig](device: VrDeviceInfo)
+use @UnloadVrStereoConfig[None](config: VrStereoConfig)
+use @LoadShader[Shader](vsFileName: Pointer[U8] tag, fsFileName: Pointer[U8] tag)
+use @LoadShaderFromMemory[Shader](vsCode: Pointer[U8] tag, fsCode: Pointer[U8] tag)
+use @IsShaderReady[Bool](shader: Shader)
+use @GetShaderLocation[I32](shader: Shader, uniformName: Pointer[U8] tag)
+use @GetShaderLocationAttrib[I32](shader: Shader, attribName: Pointer[U8] tag)
+use @SetShaderValue[None](shader: Shader, locIndex: I32, value: Pointer[None] tag, uniformType: I32)
+use @SetShaderValueV[None](shader: Shader, locIndex: I32, value: Pointer[None] tag, uniformType: I32, count: I32)
+use @SetShaderValueMatrix[None](shader: Shader, locIndex: I32, mat: Matrix)
+use @SetShaderValueTexture[None](shader: Shader, locIndex: I32, texture: Texture2D)
+use @UnloadShader[None](shader: Shader)
+use @GetMouseRay[Ray](mousePosition: Vector2, camera: Camera)
+use @GetCameraMatrix[Matrix](camera: Camera)
+use @GetCameraMatrix2D[Matrix](camera: Camera2D)
+use @GetWorldToScreen[Vector2](position: Vector3, camera: Camera)
+use @GetScreenToWorld2D[Vector2](position: Vector2, camera: Camera2D)
+use @GetWorldToScreenEx[Vector2](position: Vector3, camera: Camera, width: I32, height: I32)
+use @GetWorldToScreen2D[Vector2](position: Vector2, camera: Camera2D)
+use @SetTargetFPS[None](fps: I32)
+use @GetFrameTime[F32]()
+use @GetTime[F64]()
+use @GetFPS[I32]()
+use @SwapScreenBuffer[None]()
+use @PollInputEvents[None]()
+use @WaitTime[None](seconds: F64)
+use @SetRandomSeed[None](seed: U32)
+use @GetRandomValue[I32](min: I32, max: I32)
+use @LoadRandomSequence[Pointer[I32] tag](count: U32, min: I32, max: I32)
+use @UnloadRandomSequence[None](sequence: Pointer[I32] tag)
+use @TakeScreenshot[None](fileName: Pointer[U8] tag)
+use @SetConfigFlags[None](flags: U32)
+use @OpenURL[None](url: Pointer[U8] tag)
+use @TraceLog[None](logLevel: I32, text: Pointer[U8] tag, ...)
+use @SetTraceLogLevel[None](logLevel: I32)
+use @MemAlloc[Pointer[None] tag](size: U32)
+use @MemRealloc[Pointer[None] tag](ptr: Pointer[None] tag, size: U32)
+use @MemFree[None](ptr: Pointer[None] tag)
+use @SetTraceLogCallback[None](callback: TraceLogCallback)
+use @SetLoadFileDataCallback[None](callback: LoadFileDataCallback)
+use @SetSaveFileDataCallback[None](callback: SaveFileDataCallback)
+use @SetLoadFileTextCallback[None](callback: LoadFileTextCallback)
+use @SetSaveFileTextCallback[None](callback: SaveFileTextCallback)
+use @LoadFileData[Pointer[U8] tag](fileName: Pointer[U8] tag, dataSize: Pointer[I32] tag)
+use @UnloadFileData[None](data: Pointer[U8] tag)
+use @SaveFileData[Bool](fileName: Pointer[U8] tag, data: Pointer[None] tag, dataSize: I32)
+use @ExportDataAsCode[Bool](data: Pointer[U8] tag, dataSize: I32, fileName: Pointer[U8] tag)
+use @LoadFileText[Pointer[U8] tag](fileName: Pointer[U8] tag)
+use @UnloadFileText[None](text: Pointer[U8] tag)
+use @SaveFileText[Bool](fileName: Pointer[U8] tag, text: Pointer[U8] tag)
+use @FileExists[Bool](fileName: Pointer[U8] tag)
+use @DirectoryExists[Bool](dirPath: Pointer[U8] tag)
+use @IsFileExtension[Bool](fileName: Pointer[U8] tag, ext: Pointer[U8] tag)
+use @GetFileLength[I32](fileName: Pointer[U8] tag)
+use @GetFileExtension[Pointer[U8] tag](fileName: Pointer[U8] tag)
+use @GetFileName[Pointer[U8] tag](filePath: Pointer[U8] tag)
+use @GetFileNameWithoutExt[Pointer[U8] tag](filePath: Pointer[U8] tag)
+use @GetDirectoryPath[Pointer[U8] tag](filePath: Pointer[U8] tag)
+use @GetPrevDirectoryPath[Pointer[U8] tag](dirPath: Pointer[U8] tag)
+use @GetWorkingDirectory[Pointer[U8] tag]()
+use @GetApplicationDirectory[Pointer[U8] tag]()
+use @ChangeDirectory[Bool](dir: Pointer[U8] tag)
+use @IsPathFile[Bool](path: Pointer[U8] tag)
+use @LoadDirectoryFiles[FilePathList](dirPath: Pointer[U8] tag)
+use @LoadDirectoryFilesEx[FilePathList](basePath: Pointer[U8] tag, filter: Pointer[U8] tag, scanSubdirs: Bool)
+use @UnloadDirectoryFiles[None](files: FilePathList)
+use @IsFileDropped[Bool]()
+use @LoadDroppedFiles[FilePathList]()
+use @UnloadDroppedFiles[None](files: FilePathList)
+use @GetFileModTime[I64](fileName: Pointer[U8] tag)
+use @CompressData[Pointer[U8] tag](data: Pointer[U8] tag, dataSize: I32, compDataSize: Pointer[I32] tag)
+use @DecompressData[Pointer[U8] tag](compData: Pointer[U8] tag, compDataSize: I32, dataSize: Pointer[I32] tag)
+use @EncodeDataBase64[Pointer[U8] tag](data: Pointer[U8] tag, dataSize: I32, outputSize: Pointer[I32] tag)
+use @DecodeDataBase64[Pointer[U8] tag](data: Pointer[U8] tag, outputSize: Pointer[I32] tag)
+use @LoadAutomationEventList[AutomationEventList](fileName: Pointer[U8] tag)
+use @UnloadAutomationEventList[None](list: Pointer[AutomationEventList] tag)
+use @ExportAutomationEventList[Bool](list: AutomationEventList, fileName: Pointer[U8] tag)
+use @SetAutomationEventList[None](list: Pointer[AutomationEventList] tag)
+use @SetAutomationEventBaseFrame[None](frame: I32)
+use @StartAutomationEventRecording[None]()
+use @StopAutomationEventRecording[None]()
+use @PlayAutomationEvent[None](event: AutomationEvent)
+use @IsKeyPressed[Bool](key: I32)
+use @IsKeyPressedRepeat[Bool](key: I32)
+use @IsKeyDown[Bool](key: I32)
+use @IsKeyReleased[Bool](key: I32)
+use @IsKeyUp[Bool](key: I32)
+use @GetKeyPressed[I32]()
+use @GetCharPressed[I32]()
+use @SetExitKey[None](key: I32)
+use @IsGamepadAvailable[Bool](gamepad: I32)
+use @GetGamepadName[Pointer[U8] tag](gamepad: I32)
+use @IsGamepadButtonPressed[Bool](gamepad: I32, button: I32)
+use @IsGamepadButtonDown[Bool](gamepad: I32, button: I32)
+use @IsGamepadButtonReleased[Bool](gamepad: I32, button: I32)
+use @IsGamepadButtonUp[Bool](gamepad: I32, button: I32)
+use @GetGamepadButtonPressed[I32]()
+use @GetGamepadAxisCount[I32](gamepad: I32)
+use @GetGamepadAxisMovement[F32](gamepad: I32, axis: I32)
+use @SetGamepadMappings[I32](mappings: Pointer[U8] tag)
+use @IsMouseButtonPressed[Bool](button: I32)
+use @IsMouseButtonDown[Bool](button: I32)
+use @IsMouseButtonReleased[Bool](button: I32)
+use @IsMouseButtonUp[Bool](button: I32)
+use @GetMouseX[I32]()
+use @GetMouseY[I32]()
+use @GetMousePosition[Vector2]()
+use @GetMouseDelta[Vector2]()
+use @SetMousePosition[None](x: I32, y: I32)
+use @SetMouseOffset[None](offsetX: I32, offsetY: I32)
+use @SetMouseScale[None](scaleX: F32, scaleY: F32)
+use @GetMouseWheelMove[F32]()
+use @GetMouseWheelMoveV[Vector2]()
+use @SetMouseCursor[None](cursor: I32)
+use @GetTouchX[I32]()
+use @GetTouchY[I32]()
+use @GetTouchPosition[Vector2](index: I32)
+use @GetTouchPointId[I32](index: I32)
+use @GetTouchPointCount[I32]()
+use @SetGesturesEnabled[None](flags: U32)
+use @IsGestureDetected[Bool](gesture: U32)
+use @GetGestureDetected[I32]()
+use @GetGestureHoldDuration[F32]()
+use @GetGestureDragVector[Vector2]()
+use @GetGestureDragAngle[F32]()
+use @GetGesturePinchVector[Vector2]()
+use @GetGesturePinchAngle[F32]()
+use @UpdateCamera[None](camera: Pointer[Camera] tag, mode: I32)
+use @UpdateCameraPro[None](camera: Pointer[Camera] tag, movement: Vector3, rotation: Vector3, zoom: F32)
+use @SetShapesTexture[None](texture: Texture2D, source: Rectangle)
+use @DrawPixel[None](posX: I32, posY: I32, color: Color)
+use @DrawPixelV[None](position: Vector2, color: Color)
+use @DrawLine[None](startPosX: I32, startPosY: I32, endPosX: I32, endPosY: I32, color: Color)
+use @DrawLineV[None](startPos: Vector2, endPos: Vector2, color: Color)
+use @DrawLineEx[None](startPos: Vector2, endPos: Vector2, thick: F32, color: Color)
+use @DrawLineStrip[None](points: Pointer[Vector2] tag, pointCount: I32, color: Color)
+use @DrawLineBezier[None](startPos: Vector2, endPos: Vector2, thick: F32, color: Color)
+use @DrawCircle[None](centerX: I32, centerY: I32, radius: F32, color: Color)
+use @DrawCircleSector[None](center: Vector2, radius: F32, startAngle: F32, endAngle: F32, segments: I32, color: Color)
+use @DrawCircleSectorLines[None](center: Vector2, radius: F32, startAngle: F32, endAngle: F32, segments: I32, color: Color)
+use @DrawCircleGradient[None](centerX: I32, centerY: I32, radius: F32, color1: Color, color2: Color)
+use @DrawCircleV[None](center: Vector2, radius: F32, color: Color)
+use @DrawCircleLines[None](centerX: I32, centerY: I32, radius: F32, color: Color)
+use @DrawCircleLinesV[None](center: Vector2, radius: F32, color: Color)
+use @DrawEllipse[None](centerX: I32, centerY: I32, radiusH: F32, radiusV: F32, color: Color)
+use @DrawEllipseLines[None](centerX: I32, centerY: I32, radiusH: F32, radiusV: F32, color: Color)
+use @DrawRing[None](center: Vector2, innerRadius: F32, outerRadius: F32, startAngle: F32, endAngle: F32, segments: I32, color: Color)
+use @DrawRingLines[None](center: Vector2, innerRadius: F32, outerRadius: F32, startAngle: F32, endAngle: F32, segments: I32, color: Color)
+use @DrawRectangle[None](posX: I32, posY: I32, width: I32, height: I32, color: Color)
+use @DrawRectangleV[None](position: Vector2, size: Vector2, color: Color)
+use @DrawRectangleRec[None](rec: Rectangle, color: Color)
+use @DrawRectanglePro[None](rec: Rectangle, origin: Vector2, rotation: F32, color: Color)
+use @DrawRectangleGradientV[None](posX: I32, posY: I32, width: I32, height: I32, color1: Color, color2: Color)
+use @DrawRectangleGradientH[None](posX: I32, posY: I32, width: I32, height: I32, color1: Color, color2: Color)
+use @DrawRectangleGradientEx[None](rec: Rectangle, col1: Color, col2: Color, col3: Color, col4: Color)
+use @DrawRectangleLines[None](posX: I32, posY: I32, width: I32, height: I32, color: Color)
+use @DrawRectangleLinesEx[None](rec: Rectangle, lineThick: F32, color: Color)
+use @DrawRectangleRounded[None](rec: Rectangle, roundness: F32, segments: I32, color: Color)
+use @DrawRectangleRoundedLines[None](rec: Rectangle, roundness: F32, segments: I32, lineThick: F32, color: Color)
+use @DrawTriangle[None](v1: Vector2, v2: Vector2, v3: Vector2, color: Color)
+use @DrawTriangleLines[None](v1: Vector2, v2: Vector2, v3: Vector2, color: Color)
+use @DrawTriangleFan[None](points: Pointer[Vector2] tag, pointCount: I32, color: Color)
+use @DrawTriangleStrip[None](points: Pointer[Vector2] tag, pointCount: I32, color: Color)
+use @DrawPoly[None](center: Vector2, sides: I32, radius: F32, rotation: F32, color: Color)
+use @DrawPolyLines[None](center: Vector2, sides: I32, radius: F32, rotation: F32, color: Color)
+use @DrawPolyLinesEx[None](center: Vector2, sides: I32, radius: F32, rotation: F32, lineThick: F32, color: Color)
+use @DrawSplineLinear[None](points: Pointer[Vector2] tag, pointCount: I32, thick: F32, color: Color)
+use @DrawSplineBasis[None](points: Pointer[Vector2] tag, pointCount: I32, thick: F32, color: Color)
+use @DrawSplineCatmullRom[None](points: Pointer[Vector2] tag, pointCount: I32, thick: F32, color: Color)
+use @DrawSplineBezierQuadratic[None](points: Pointer[Vector2] tag, pointCount: I32, thick: F32, color: Color)
+use @DrawSplineBezierCubic[None](points: Pointer[Vector2] tag, pointCount: I32, thick: F32, color: Color)
+use @DrawSplineSegmentLinear[None](p1: Vector2, p2: Vector2, thick: F32, color: Color)
+use @DrawSplineSegmentBasis[None](p1: Vector2, p2: Vector2, p3: Vector2, p4: Vector2, thick: F32, color: Color)
+use @DrawSplineSegmentCatmullRom[None](p1: Vector2, p2: Vector2, p3: Vector2, p4: Vector2, thick: F32, color: Color)
+use @DrawSplineSegmentBezierQuadratic[None](p1: Vector2, c2: Vector2, p3: Vector2, thick: F32, color: Color)
+use @DrawSplineSegmentBezierCubic[None](p1: Vector2, c2: Vector2, c3: Vector2, p4: Vector2, thick: F32, color: Color)
+use @GetSplinePointLinear[Vector2](startPos: Vector2, endPos: Vector2, t: F32)
+use @GetSplinePointBasis[Vector2](p1: Vector2, p2: Vector2, p3: Vector2, p4: Vector2, t: F32)
+use @GetSplinePointCatmullRom[Vector2](p1: Vector2, p2: Vector2, p3: Vector2, p4: Vector2, t: F32)
+use @GetSplinePointBezierQuad[Vector2](p1: Vector2, c2: Vector2, p3: Vector2, t: F32)
+use @GetSplinePointBezierCubic[Vector2](p1: Vector2, c2: Vector2, c3: Vector2, p4: Vector2, t: F32)
+use @CheckCollisionRecs[Bool](rec1: Rectangle, rec2: Rectangle)
+use @CheckCollisionCircles[Bool](center1: Vector2, radius1: F32, center2: Vector2, radius2: F32)
+use @CheckCollisionCircleRec[Bool](center: Vector2, radius: F32, rec: Rectangle)
+use @CheckCollisionPointRec[Bool](point: Vector2, rec: Rectangle)
+use @CheckCollisionPointCircle[Bool](point: Vector2, center: Vector2, radius: F32)
+use @CheckCollisionPointTriangle[Bool](point: Vector2, p1: Vector2, p2: Vector2, p3: Vector2)
+use @CheckCollisionPointPoly[Bool](point: Vector2, points: Pointer[Vector2] tag, pointCount: I32)
+use @CheckCollisionLines[Bool](startPos1: Vector2, endPos1: Vector2, startPos2: Vector2, endPos2: Vector2, collisionPoint: Pointer[Vector2] tag)
+use @CheckCollisionPointLine[Bool](point: Vector2, p1: Vector2, p2: Vector2, threshold: I32)
+use @GetCollisionRec[Rectangle](rec1: Rectangle, rec2: Rectangle)
+use @LoadImage[Image](fileName: Pointer[U8] tag)
+use @LoadImageRaw[Image](fileName: Pointer[U8] tag, width: I32, height: I32, format: I32, headerSize: I32)
+use @LoadImageSvg[Image](fileNameOrString: Pointer[U8] tag, width: I32, height: I32)
+use @LoadImageAnim[Image](fileName: Pointer[U8] tag, frames: Pointer[I32] tag)
+use @LoadImageFromMemory[Image](fileType: Pointer[U8] tag, fileData: Pointer[U8] tag, dataSize: I32)
+use @LoadImageFromTexture[Image](texture: Texture2D)
+use @LoadImageFromScreen[Image]()
+use @IsImageReady[Bool](image: Image)
+use @UnloadImage[None](image: Image)
+use @ExportImage[Bool](image: Image, fileName: Pointer[U8] tag)
+use @ExportImageToMemory[Pointer[U8] tag](image: Image, fileType: Pointer[U8] tag, fileSize: Pointer[I32] tag)
+use @ExportImageAsCode[Bool](image: Image, fileName: Pointer[U8] tag)
+use @GenImageColor[Image](width: I32, height: I32, color: Color)
+use @GenImageGradientLinear[Image](width: I32, height: I32, direction: I32, start: Color, end': Color)
+use @GenImageGradientRadial[Image](width: I32, height: I32, density: F32, inner: Color, outer: Color)
+use @GenImageGradientSquare[Image](width: I32, height: I32, density: F32, inner: Color, outer: Color)
+use @GenImageChecked[Image](width: I32, height: I32, checksX: I32, checksY: I32, col1: Color, col2: Color)
+use @GenImageWhiteNoise[Image](width: I32, height: I32, factor: F32)
+use @GenImagePerlinNoise[Image](width: I32, height: I32, offsetX: I32, offsetY: I32, scale: F32)
+use @GenImageCellular[Image](width: I32, height: I32, tileSize: I32)
+use @GenImageText[Image](width: I32, height: I32, text: Pointer[U8] tag)
+use @ImageCopy[Image](image: Image)
+use @ImageFromImage[Image](image: Image, rec: Rectangle)
+use @ImageText[Image](text: Pointer[U8] tag, fontSize: I32, color: Color)
+use @ImageTextEx[Image](font: Font, text: Pointer[U8] tag, fontSize: F32, spacing: F32, tint: Color)
+use @ImageFormat[None](image: Pointer[Image] tag, newFormat: I32)
+use @ImageToPOT[None](image: Pointer[Image] tag, fill: Color)
+use @ImageCrop[None](image: Pointer[Image] tag, crop: Rectangle)
+use @ImageAlphaCrop[None](image: Pointer[Image] tag, threshold: F32)
+use @ImageAlphaClear[None](image: Pointer[Image] tag, color: Color, threshold: F32)
+use @ImageAlphaMask[None](image: Pointer[Image] tag, alphaMask: Image)
+use @ImageAlphaPremultiply[None](image: Pointer[Image] tag)
+use @ImageBlurGaussian[None](image: Pointer[Image] tag, blurSize: I32)
+use @ImageKernelConvolution[None](image: Pointer[Image] tag, kernel: Pointer[F32], kernelSize: I32)
+use @ImageResize[None](image: Pointer[Image] tag, newWidth: I32, newHeight: I32)
+use @ImageResizeNN[None](image: Pointer[Image] tag, newWidth: I32, newHeight: I32)
+use @ImageResizeCanvas[None](image: Pointer[Image] tag, newWidth: I32, newHeight: I32, offsetX: I32, offsetY: I32, fill: Color)
+use @ImageMipmaps[None](image: Pointer[Image] tag)
+use @ImageDither[None](image: Pointer[Image] tag, rBpp: I32, gBpp: I32, bBpp: I32, aBpp: I32)
+use @ImageFlipVertical[None](image: Pointer[Image] tag)
+use @ImageFlipHorizontal[None](image: Pointer[Image] tag)
+use @ImageRotate[None](image: Pointer[Image] tag, degrees: I32)
+use @ImageRotateCW[None](image: Pointer[Image] tag)
+use @ImageRotateCCW[None](image: Pointer[Image] tag)
+use @ImageColorTint[None](image: Pointer[Image] tag, color: Color)
+use @ImageColorInvert[None](image: Pointer[Image] tag)
+use @ImageColorGrayscale[None](image: Pointer[Image] tag)
+use @ImageColorContrast[None](image: Pointer[Image] tag, contrast: F32)
+use @ImageColorBrightness[None](image: Pointer[Image] tag, brightness: I32)
+use @ImageColorReplace[None](image: Pointer[Image] tag, color: Color, replace: Color)
+use @LoadImageColors[Pointer[Color] tag](image: Image)
+use @LoadImagePalette[Pointer[Color] tag](image: Image, maxPaletteSize: I32, colorCount: Pointer[I32] tag)
+use @UnloadImageColors[None](colors: Pointer[Color] tag)
+use @UnloadImagePalette[None](colors: Pointer[Color] tag)
+use @GetImageAlphaBorder[Rectangle](image: Image, threshold: F32)
+use @GetImageColor[Color](image: Image, x: I32, y: I32)
+use @ImageClearBackground[None](dst: Pointer[Image] tag, color: Color)
+use @ImageDrawPixel[None](dst: Pointer[Image] tag, posX: I32, posY: I32, color: Color)
+use @ImageDrawPixelV[None](dst: Pointer[Image] tag, position: Vector2, color: Color)
+use @ImageDrawLine[None](dst: Pointer[Image] tag, startPosX: I32, startPosY: I32, endPosX: I32, endPosY: I32, color: Color)
+use @ImageDrawLineV[None](dst: Pointer[Image] tag, start: Vector2, end': Vector2, color: Color)
+use @ImageDrawCircle[None](dst: Pointer[Image] tag, centerX: I32, centerY: I32, radius: I32, color: Color)
+use @ImageDrawCircleV[None](dst: Pointer[Image] tag, center: Vector2, radius: I32, color: Color)
+use @ImageDrawCircleLines[None](dst: Pointer[Image] tag, centerX: I32, centerY: I32, radius: I32, color: Color)
+use @ImageDrawCircleLinesV[None](dst: Pointer[Image] tag, center: Vector2, radius: I32, color: Color)
+use @ImageDrawRectangle[None](dst: Pointer[Image] tag, posX: I32, posY: I32, width: I32, height: I32, color: Color)
+use @ImageDrawRectangleV[None](dst: Pointer[Image] tag, position: Vector2, size: Vector2, color: Color)
+use @ImageDrawRectangleRec[None](dst: Pointer[Image] tag, rec: Rectangle, color: Color)
+use @ImageDrawRectangleLines[None](dst: Pointer[Image] tag, rec: Rectangle, thick: I32, color: Color)
+use @ImageDraw[None](dst: Pointer[Image] tag, src: Image, srcRec: Rectangle, dstRec: Rectangle, tint: Color)
+use @ImageDrawText[None](dst: Pointer[Image] tag, text: Pointer[U8] tag, posX: I32, posY: I32, fontSize: I32, color: Color)
+use @ImageDrawTextEx[None](dst: Pointer[Image] tag, font: Font, text: Pointer[U8] tag, position: Vector2, fontSize: F32, spacing: F32, tint: Color)
+use @LoadTexture[Texture2D](fileName: Pointer[U8] tag)
+use @LoadTextureFromImage[Texture2D](image: Image)
+use @LoadTextureCubemap[TextureCubemap](image: Image, layout: I32)
+use @LoadRenderTexture[RenderTexture2D](width: I32, height: I32)
+use @IsTextureReady[Bool](texture: Texture2D)
+use @UnloadTexture[None](texture: Texture2D)
+use @IsRenderTextureReady[Bool](target: RenderTexture2D)
+use @UnloadRenderTexture[None](target: RenderTexture2D)
+use @UpdateTexture[None](texture: Texture2D, pixels: Pointer[None] tag)
+use @UpdateTextureRec[None](texture: Texture2D, rec: Rectangle, pixels: Pointer[None] tag)
+use @GenTextureMipmaps[None](texture: Pointer[Texture2D] tag)
+use @SetTextureFilter[None](texture: Texture2D, filter: I32)
+use @SetTextureWrap[None](texture: Texture2D, wrap: I32)
+use @DrawTexture[None](texture: Texture2D, posX: I32, posY: I32, tint: Color)
+use @DrawTextureV[None](texture: Texture2D, position: Vector2, tint: Color)
+use @DrawTextureEx[None](texture: Texture2D, position: Vector2, rotation: F32, scale: F32, tint: Color)
+use @DrawTextureRec[None](texture: Texture2D, source: Rectangle, position: Vector2, tint: Color)
+use @DrawTexturePro[None](texture: Texture2D, source: Rectangle, dest: Rectangle, origin: Vector2, rotation: F32, tint: Color)
+use @DrawTextureNPatch[None](texture: Texture2D, nPatchInfo: NPatchInfo, dest: Rectangle, origin: Vector2, rotation: F32, tint: Color)
+use @Fade[Color](color: Color, alpha: F32)
+use @ColorToInt[I32](color: Color)
+use @ColorNormalize[Vector4](color: Color)
+use @ColorFromNormalized[Color](normalized: Vector4)
+use @ColorToHSV[Vector3](color: Color)
+use @ColorFromHSV[Color](hue: F32, saturation: F32, value: F32)
+use @ColorTint[Color](color: Color, tint: Color)
+use @ColorBrightness[Color](color: Color, factor: F32)
+use @ColorContrast[Color](color: Color, contrast: F32)
+use @ColorAlpha[Color](color: Color, alpha: F32)
+use @ColorAlphaBlend[Color](dst: Color, src: Color, tint: Color)
+use @GetColor[Color](hexValue: U32)
+use @GetPixelColor[Color](srcPtr: Pointer[None] tag, format: I32)
+use @SetPixelColor[None](dstPtr: Pointer[None] tag, color: Color, format: I32)
+use @GetPixelDataSize[I32](width: I32, height: I32, format: I32)
+use @GetFontDefault[Font]()
+use @LoadFont[Font](fileName: Pointer[U8] tag)
+use @LoadFontEx[Font](fileName: Pointer[U8] tag, fontSize: I32, codepoints: Pointer[I32] tag, codepointCount: I32)
+use @LoadFontFromImage[Font](image: Image, key: Color, firstChar: I32)
+use @LoadFontFromMemory[Font](fileType: Pointer[U8] tag, fileData: Pointer[U8] tag, dataSize: I32, fontSize: I32, codepoints: Pointer[I32] tag, codepointCount: I32)
+use @IsFontReady[Bool](font: Font)
+use @LoadFontData[Pointer[GlyphInfo] tag](fileData: Pointer[U8] tag, dataSize: I32, fontSize: I32, codepoints: Pointer[I32] tag, codepointCount: I32, type': I32)
+use @GenImageFontAtlas[Image](glyphs: Pointer[GlyphInfo] tag, glyphRecs: Pointer[Pointer[Rectangle] tag] tag, glyphCount: I32, fontSize: I32, padding: I32, packMethod: I32)
+use @UnloadFontData[None](glyphs: Pointer[GlyphInfo] tag, glyphCount: I32)
+use @UnloadFont[None](font: Font)
+use @ExportFontAsCode[Bool](font: Font, fileName: Pointer[U8] tag)
+use @DrawFPS[None](posX: I32, posY: I32)
+use @DrawText[None](text: Pointer[U8] tag, posX: I32, posY: I32, fontSize: I32, color: Color)
+use @DrawTextEx[None](font: Font, text: Pointer[U8] tag, position: Vector2, fontSize: F32, spacing: F32, tint: Color)
+use @DrawTextPro[None](font: Font, text: Pointer[U8] tag, position: Vector2, origin: Vector2, rotation: F32, fontSize: F32, spacing: F32, tint: Color)
+use @DrawTextCodepoint[None](font: Font, codepoint: I32, position: Vector2, fontSize: F32, tint: Color)
+use @DrawTextCodepoints[None](font: Font, codepoints: Pointer[I32] tag, codepointCount: I32, position: Vector2, fontSize: F32, spacing: F32, tint: Color)
+use @SetTextLineSpacing[None](spacing: I32)
+use @MeasureText[I32](text: Pointer[U8] tag, fontSize: I32)
+use @MeasureTextEx[Vector2](font: Font, text: Pointer[U8] tag, fontSize: F32, spacing: F32)
+use @GetGlyphIndex[I32](font: Font, codepoint: I32)
+use @GetGlyphInfo[GlyphInfo](font: Font, codepoint: I32)
+use @GetGlyphAtlasRec[Rectangle](font: Font, codepoint: I32)
+use @LoadUTF8[Pointer[U8] tag](codepoints: Pointer[I32] tag, length: I32)
+use @UnloadUTF8[None](text: Pointer[U8] tag)
+use @LoadCodepoints[Pointer[I32] tag](text: Pointer[U8] tag, count: Pointer[I32] tag)
+use @UnloadCodepoints[None](codepoints: Pointer[I32] tag)
+use @GetCodepointCount[I32](text: Pointer[U8] tag)
+use @GetCodepoint[I32](text: Pointer[U8] tag, codepointSize: Pointer[I32] tag)
+use @GetCodepointNext[I32](text: Pointer[U8] tag, codepointSize: Pointer[I32] tag)
+use @GetCodepointPrevious[I32](text: Pointer[U8] tag, codepointSize: Pointer[I32] tag)
+use @CodepointToUTF8[Pointer[U8] tag](codepoint: I32, utf8Size: Pointer[I32] tag)
+use @TextCopy[I32](dst: Pointer[U8] tag, src: Pointer[U8] tag)
+use @TextIsEqual[Bool](text1: Pointer[U8] tag, text2: Pointer[U8] tag)
+use @TextLength[U32](text: Pointer[U8] tag)
+use @TextFormat[Pointer[U8] tag](text: Pointer[U8] tag, ...)
+use @TextSubtext[Pointer[U8] tag](text: Pointer[U8] tag, position: I32, length: I32)
+use @TextReplace[Pointer[U8] tag](text: Pointer[U8] tag, replace: Pointer[U8] tag, by: Pointer[U8] tag)
+use @TextInsert[Pointer[U8] tag](text: Pointer[U8] tag, insert: Pointer[U8] tag, position: I32)
+use @TextJoin[Pointer[U8] tag](textList: Pointer[Pointer[U8] tag] tag, count: I32, delimiter: Pointer[U8] tag)
+use @TextSplit[Pointer[Pointer[U8] tag] tag](text: Pointer[U8] tag, delimiter: U8, count: Pointer[I32] tag)
+use @TextAppend[None](text: Pointer[U8] tag, append: Pointer[U8] tag, position: Pointer[I32] tag)
+use @TextFindIndex[I32](text: Pointer[U8] tag, find: Pointer[U8] tag)
+use @TextToUpper[Pointer[U8] tag](text: Pointer[U8] tag)
+use @TextToLower[Pointer[U8] tag](text: Pointer[U8] tag)
+use @TextToPascal[Pointer[U8] tag](text: Pointer[U8] tag)
+use @TextToInteger[I32](text: Pointer[U8] tag)
+use @DrawLine3D[None](startPos: Vector3, endPos: Vector3, color: Color)
+use @DrawPoint3D[None](position: Vector3, color: Color)
+use @DrawCircle3D[None](center: Vector3, radius: F32, rotationAxis: Vector3, rotationAngle: F32, color: Color)
+use @DrawTriangle3D[None](v1: Vector3, v2: Vector3, v3: Vector3, color: Color)
+use @DrawTriangleStrip3D[None](points: Pointer[Vector3] tag, pointCount: I32, color: Color)
+use @DrawCube[None](position: Vector3, width: F32, height: F32, length: F32, color: Color)
+use @DrawCubeV[None](position: Vector3, size: Vector3, color: Color)
+use @DrawCubeWires[None](position: Vector3, width: F32, height: F32, length: F32, color: Color)
+use @DrawCubeWiresV[None](position: Vector3, size: Vector3, color: Color)
+use @DrawSphere[None](centerPos: Vector3, radius: F32, color: Color)
+use @DrawSphereEx[None](centerPos: Vector3, radius: F32, rings: I32, slices: I32, color: Color)
+use @DrawSphereWires[None](centerPos: Vector3, radius: F32, rings: I32, slices: I32, color: Color)
+use @DrawCylinder[None](position: Vector3, radiusTop: F32, radiusBottom: F32, height: F32, slices: I32, color: Color)
+use @DrawCylinderEx[None](startPos: Vector3, endPos: Vector3, startRadius: F32, endRadius: F32, sides: I32, color: Color)
+use @DrawCylinderWires[None](position: Vector3, radiusTop: F32, radiusBottom: F32, height: F32, slices: I32, color: Color)
+use @DrawCylinderWiresEx[None](startPos: Vector3, endPos: Vector3, startRadius: F32, endRadius: F32, sides: I32, color: Color)
+use @DrawCapsule[None](startPos: Vector3, endPos: Vector3, radius: F32, slices: I32, rings: I32, color: Color)
+use @DrawCapsuleWires[None](startPos: Vector3, endPos: Vector3, radius: F32, slices: I32, rings: I32, color: Color)
+use @DrawPlane[None](centerPos: Vector3, size: Vector2, color: Color)
+use @DrawRay[None](ray: Ray, color: Color)
+use @DrawGrid[None](slices: I32, spacing: F32)
+use @LoadModel[Model](fileName: Pointer[U8] tag)
+use @LoadModelFromMesh[Model](mesh: Mesh)
+use @IsModelReady[Bool](model: Model)
+use @UnloadModel[None](model: Model)
+use @GetModelBoundingBox[BoundingBox](model: Model)
+use @DrawModel[None](model: Model, position: Vector3, scale: F32, tint: Color)
+use @DrawModelEx[None](model: Model, position: Vector3, rotationAxis: Vector3, rotationAngle: F32, scale: Vector3, tint: Color)
+use @DrawModelWires[None](model: Model, position: Vector3, scale: F32, tint: Color)
+use @DrawModelWiresEx[None](model: Model, position: Vector3, rotationAxis: Vector3, rotationAngle: F32, scale: Vector3, tint: Color)
+use @DrawBoundingBox[None](box': BoundingBox, color: Color)
+use @DrawBillboard[None](camera: Camera, texture: Texture2D, position: Vector3, size: F32, tint: Color)
+use @DrawBillboardRec[None](camera: Camera, texture: Texture2D, source: Rectangle, position: Vector3, size: Vector2, tint: Color)
+use @DrawBillboardPro[None](camera: Camera, texture: Texture2D, source: Rectangle, position: Vector3, up: Vector3, size: Vector2, origin: Vector2, rotation: F32, tint: Color)
+use @UploadMesh[None](mesh: Pointer[Mesh] tag, dynamic: Bool)
+use @UpdateMeshBuffer[None](mesh: Mesh, index: I32, data: Pointer[None] tag, dataSize: I32, offset: I32)
+use @UnloadMesh[None](mesh: Mesh)
+use @DrawMesh[None](mesh: Mesh, material: Material, transform: Matrix)
+use @DrawMeshInstanced[None](mesh: Mesh, material: Material, transforms: Pointer[Matrix] tag, instances: I32)
+use @ExportMesh[Bool](mesh: Mesh, fileName: Pointer[U8] tag)
+use @GetMeshBoundingBox[BoundingBox](mesh: Mesh)
+use @GenMeshTangents[None](mesh: Pointer[Mesh] tag)
+use @GenMeshPoly[Mesh](sides: I32, radius: F32)
+use @GenMeshPlane[Mesh](width: F32, length: F32, resX: I32, resZ: I32)
+use @GenMeshCube[Mesh](width: F32, height: F32, length: F32)
+use @GenMeshSphere[Mesh](radius: F32, rings: I32, slices: I32)
+use @GenMeshHemiSphere[Mesh](radius: F32, rings: I32, slices: I32)
+use @GenMeshCylinder[Mesh](radius: F32, height: F32, slices: I32)
+use @GenMeshCone[Mesh](radius: F32, height: F32, slices: I32)
+use @GenMeshTorus[Mesh](radius: F32, size: F32, radSeg: I32, sides: I32)
+use @GenMeshKnot[Mesh](radius: F32, size: F32, radSeg: I32, sides: I32)
+use @GenMeshHeightmap[Mesh](heightmap: Image, size: Vector3)
+use @GenMeshCubicmap[Mesh](cubicmap: Image, cubeSize: Vector3)
+use @LoadMaterials[Pointer[Material] tag](fileName: Pointer[U8] tag, materialCount: Pointer[I32] tag)
+use @LoadMaterialDefault[Material]()
+use @IsMaterialReady[Bool](material: Material)
+use @UnloadMaterial[None](material: Material)
+use @SetMaterialTexture[None](material: Pointer[Material] tag, mapType: I32, texture: Texture2D)
+use @SetModelMeshMaterial[None](model: Pointer[Model] tag, meshId: I32, materialId: I32)
+use @LoadModelAnimations[Pointer[ModelAnimation] tag](fileName: Pointer[U8] tag, animCount: Pointer[I32] tag)
+use @UpdateModelAnimation[None](model: Model, anim: ModelAnimation, frame: I32)
+use @UnloadModelAnimation[None](anim: ModelAnimation)
+use @UnloadModelAnimations[None](animations: Pointer[ModelAnimation] tag, animCount: I32)
+use @IsModelAnimationValid[Bool](model: Model, anim: ModelAnimation)
+use @CheckCollisionSpheres[Bool](center1: Vector3, radius1: F32, center2: Vector3, radius2: F32)
+use @CheckCollisionBoxes[Bool](box1: BoundingBox, box2: BoundingBox)
+use @CheckCollisionBoxSphere[Bool](box': BoundingBox, center: Vector3, radius: F32)
+use @GetRayCollisionSphere[RayCollision](ray: Ray, center: Vector3, radius: F32)
+use @GetRayCollisionBox[RayCollision](ray: Ray, box': BoundingBox)
+use @GetRayCollisionMesh[RayCollision](ray: Ray, mesh: Mesh, transform: Matrix)
+use @GetRayCollisionTriangle[RayCollision](ray: Ray, p1: Vector3, p2: Vector3, p3: Vector3)
+use @GetRayCollisionQuad[RayCollision](ray: Ray, p1: Vector3, p2: Vector3, p3: Vector3, p4: Vector3)
+use @InitAudioDevice[None]()
+use @CloseAudioDevice[None]()
+use @IsAudioDeviceReady[Bool]()
+use @SetMasterVolume[None](volume: F32)
+use @GetMasterVolume[F32]()
+use @LoadWave[Wave](fileName: Pointer[U8] tag)
+use @LoadWaveFromMemory[Wave](fileType: Pointer[U8] tag, fileData: Pointer[U8] tag, dataSize: I32)
+use @IsWaveReady[Bool](wave: Wave)
+use @LoadSound[Sound](fileName: Pointer[U8] tag)
+use @LoadSoundFromWave[Sound](wave: Wave)
+use @LoadSoundAlias[Sound](source: Sound)
+use @IsSoundReady[Bool](sound: Sound)
+use @UpdateSound[None](sound: Sound, data: Pointer[None] tag, sampleCount: I32)
+use @UnloadWave[None](wave: Wave)
+use @UnloadSound[None](sound: Sound)
+use @UnloadSoundAlias[None](alias: Sound)
+use @ExportWave[Bool](wave: Wave, fileName: Pointer[U8] tag)
+use @ExportWaveAsCode[Bool](wave: Wave, fileName: Pointer[U8] tag)
+use @PlaySound[None](sound: Sound)
+use @StopSound[None](sound: Sound)
+use @PauseSound[None](sound: Sound)
+use @ResumeSound[None](sound: Sound)
+use @IsSoundPlaying[Bool](sound: Sound)
+use @SetSoundVolume[None](sound: Sound, volume: F32)
+use @SetSoundPitch[None](sound: Sound, pitch: F32)
+use @SetSoundPan[None](sound: Sound, pan: F32)
+use @WaveCopy[Wave](wave: Wave)
+use @WaveCrop[None](wave: Pointer[Wave] tag, initSample: I32, finalSample: I32)
+use @WaveFormat[None](wave: Pointer[Wave] tag, sampleRate: I32, sampleSize: I32, channels: I32)
+use @LoadWaveSamples[Pointer[F32] tag](wave: Wave)
+use @UnloadWaveSamples[None](samples: Pointer[F32] tag)
+use @LoadMusicStream[Music](fileName: Pointer[U8] tag)
+use @LoadMusicStreamFromMemory[Music](fileType: Pointer[U8] tag, data: Pointer[U8] tag, dataSize: I32)
+use @IsMusicReady[Bool](music: Music)
+use @UnloadMusicStream[None](music: Music)
+use @PlayMusicStream[None](music: Music)
+use @IsMusicStreamPlaying[Bool](music: Music)
+use @UpdateMusicStream[None](music: Music)
+use @StopMusicStream[None](music: Music)
+use @PauseMusicStream[None](music: Music)
+use @ResumeMusicStream[None](music: Music)
+use @SeekMusicStream[None](music: Music, position: F32)
+use @SetMusicVolume[None](music: Music, volume: F32)
+use @SetMusicPitch[None](music: Music, pitch: F32)
+use @SetMusicPan[None](music: Music, pan: F32)
+use @GetMusicTimeLength[F32](music: Music)
+use @GetMusicTimePlayed[F32](music: Music)
+use @LoadAudioStream[AudioStream](sampleRate: U32, sampleSize: U32, channels: U32)
+use @IsAudioStreamReady[Bool](stream: AudioStream)
+use @UnloadAudioStream[None](stream: AudioStream)
+use @UpdateAudioStream[None](stream: AudioStream, data: Pointer[None] tag, frameCount: I32)
+use @IsAudioStreamProcessed[Bool](stream: AudioStream)
+use @PlayAudioStream[None](stream: AudioStream)
+use @PauseAudioStream[None](stream: AudioStream)
+use @ResumeAudioStream[None](stream: AudioStream)
+use @IsAudioStreamPlaying[Bool](stream: AudioStream)
+use @StopAudioStream[None](stream: AudioStream)
+use @SetAudioStreamVolume[None](stream: AudioStream, volume: F32)
+use @SetAudioStreamPitch[None](stream: AudioStream, pitch: F32)
+use @SetAudioStreamPan[None](stream: AudioStream, pan: F32)
+use @SetAudioStreamBufferSizeDefault[None](size: I32)
+use @SetAudioStreamCallback[None](stream: AudioStream, callback: AudioCallback)
+use @AttachAudioStreamProcessor[None](stream: AudioStream, processor: AudioCallback)
+use @DetachAudioStreamProcessor[None](stream: AudioStream, processor: AudioCallback)
+use @AttachAudioMixedProcessor[None](processor: AudioCallback)
+use @DetachAudioMixedProcessor[None](processor: AudioCallback)
 primitive FlagVsyncHint fun value(): U32 => 64
 primitive FlagFullscreenMode fun value(): U32 => 2
 primitive FlagWindowResizable fun value(): U32 => 4
@@ -681,6 +1234,13 @@ type NPatchLayout is
 
 primitive RAudioBuffer
 primitive RAudioProcessor
+// TODO: implement callbacks
+primitive TraceLogCallback
+primitive LoadFileDataCallback
+primitive SaveFileDataCallback
+primitive LoadFileTextCallback
+primitive SaveFileTextCallback
+primitive AudioCallback
 
 struct Vector2
   let x: F32
@@ -773,13 +1333,13 @@ struct Rectangle
     height = height'
 
 struct Image
-  let data: Pointer[None]
+  let data: Pointer[None] tag
   let width: I32
   let height: I32
   let mipmaps: I32
   let format: I32
 
-  new create(data': Pointer[None], width': I32, height': I32, mipmaps': I32, format': I32) =>
+  new create(data': Pointer[None] tag, width': I32, height': I32, mipmaps': I32, format': I32) =>
     data = data'
     width = width'
     height = height'
@@ -845,10 +1405,10 @@ struct Font
   let glyph_count: I32
   let glyph_padding: I32
   let texture: Texture2D
-  let recs: Pointer[Rectangle]
-  let glyphs: Pointer[GlyphInfo]
+  let recs: Pointer[Rectangle] tag
+  let glyphs: Pointer[GlyphInfo] tag
 
-  new create(base_size': I32, glyph_count': I32, glyph_padding': I32, texture': Texture2D, recs': Pointer[Rectangle], glyphs': Pointer[GlyphInfo]) =>
+  new create(base_size': I32, glyph_count': I32, glyph_padding': I32, texture': Texture2D, recs': Pointer[Rectangle] tag, glyphs': Pointer[GlyphInfo] tag) =>
     base_size = base_size'
     glyph_count = glyph_count'
     glyph_padding = glyph_padding'
@@ -885,21 +1445,21 @@ struct Camera2D
 struct Mesh
   let vertex_count: I32
   let triangle_count: I32
-  let vertices: Pointer[F32]
-  let texcoords: Pointer[F32]
-  let texcoords2: Pointer[F32]
-  let normals: Pointer[F32]
-  let tangents: Pointer[F32]
-  let colors: String
-  let indices: Pointer[U16]
-  let anim_vertices: Pointer[F32]
-  let anim_normals: Pointer[F32]
-  let bone_ids: String
-  let bone_weights: Pointer[F32]
+  let vertices: Pointer[F32] tag
+  let texcoords: Pointer[F32] tag
+  let texcoords2: Pointer[F32] tag
+  let normals: Pointer[F32] tag
+  let tangents: Pointer[F32] tag
+  let colors: Pointer[U8] tag
+  let indices: Pointer[U16] tag
+  let anim_vertices: Pointer[F32] tag
+  let anim_normals: Pointer[F32] tag
+  let bone_ids: Pointer[U8] tag
+  let bone_weights: Pointer[F32] tag
   let vao_id: U32
-  let vbo_id: Pointer[U32]
+  let vbo_id: Pointer[U32] tag
 
-  new create(vertex_count': I32, triangle_count': I32, vertices': Pointer[F32], texcoords': Pointer[F32], texcoords2': Pointer[F32], normals': Pointer[F32], tangents': Pointer[F32], colors': String, indices': Pointer[U16], anim_vertices': Pointer[F32], anim_normals': Pointer[F32], bone_ids': String, bone_weights': Pointer[F32], vao_id': U32, vbo_id': Pointer[U32]) =>
+  new create(vertex_count': I32, triangle_count': I32, vertices': Pointer[F32] tag, texcoords': Pointer[F32] tag, texcoords2': Pointer[F32] tag, normals': Pointer[F32] tag, tangents': Pointer[F32] tag, colors': Pointer[U8] tag, indices': Pointer[U16] tag, anim_vertices': Pointer[F32] tag, anim_normals': Pointer[F32] tag, bone_ids': Pointer[U8] tag, bone_weights': Pointer[F32] tag, vao_id': U32, vbo_id': Pointer[U32] tag) =>
     vertex_count = vertex_count'
     triangle_count = triangle_count'
     vertices = vertices'
@@ -918,9 +1478,9 @@ struct Mesh
 
 struct Shader
   let id: U32
-  let locs: Pointer[I32]
+  let locs: Pointer[I32] tag
 
-  new create(id': U32, locs': Pointer[I32]) =>
+  new create(id': U32, locs': Pointer[I32] tag) =>
     id = id'
     locs = locs'
 
@@ -936,10 +1496,10 @@ struct MaterialMap
 
 struct Material
   let shader: Shader
-  let maps: Pointer[MaterialMap]
-  let params: Pointer[F32]
+  let maps: Pointer[MaterialMap] tag
+  let params: Pointer[F32] tag
 
-  new create(shader': Shader, maps': Pointer[MaterialMap], params': Pointer[F32]) =>
+  new create(shader': Shader, maps': Pointer[MaterialMap] tag, params': Pointer[F32] tag) =>
     shader = shader'
     maps = maps'
     params = params'
@@ -955,10 +1515,10 @@ struct Transform
     scale = scale'
 
 struct BoneInfo
-  let name: Pointer[U8]
+  let name: Pointer[U8] tag
   let parent: I32
 
-  new create(name': Pointer[U8], parent': I32) =>
+  new create(name': Pointer[U8] tag, parent': I32) =>
     name = name'
     parent = parent'
 
@@ -966,14 +1526,14 @@ struct Model
   let transform: Matrix
   let mesh_count: I32
   let material_count: I32
-  let meshes: Pointer[Mesh]
-  let materials: Pointer[Material]
-  let mesh_material: Pointer[I32]
+  let meshes: Pointer[Mesh] tag
+  let materials: Pointer[Material] tag
+  let mesh_material: Pointer[I32] tag
   let bone_count: I32
-  let bones: Pointer[BoneInfo]
-  let bind_pose: Pointer[Transform]
+  let bones: Pointer[BoneInfo] tag
+  let bind_pose: Pointer[Transform] tag
 
-  new create(transform': Matrix, mesh_count': I32, material_count': I32, meshes': Pointer[Mesh], materials': Pointer[Material], mesh_material': Pointer[I32], bone_count': I32, bones': Pointer[BoneInfo], bind_pose': Pointer[Transform]) =>
+  new create(transform': Matrix, mesh_count': I32, material_count': I32, meshes': Pointer[Mesh] tag, materials': Pointer[Material] tag, mesh_material': Pointer[I32] tag, bone_count': I32, bones': Pointer[BoneInfo] tag, bind_pose': Pointer[Transform] tag) =>
     transform = transform'
     mesh_count = mesh_count'
     material_count = material_count'
@@ -987,11 +1547,11 @@ struct Model
 struct ModelAnimation
   let bone_count: I32
   let frame_count: I32
-  let bones: Pointer[BoneInfo]
-  let frame_poses: Pointer[Pointer[Transform]]
-  let name: Pointer[U8]
+  let bones: Pointer[BoneInfo] tag
+  let frame_poses: Pointer[Pointer[Transform] tag] tag
+  let name: Pointer[U8] tag
 
-  new create(bone_count': I32, frame_count': I32, bones': Pointer[BoneInfo], frame_poses': Pointer[Pointer[Transform]], name': Pointer[U8]) =>
+  new create(bone_count': I32, frame_count': I32, bones': Pointer[BoneInfo] tag, frame_poses': Pointer[Pointer[Transform] tag] tag, name': Pointer[U8] tag) =>
     bone_count = bone_count'
     frame_count = frame_count'
     bones = bones'
@@ -1031,9 +1591,9 @@ struct Wave
   let sample_rate: U32
   let sample_size: U32
   let channels: U32
-  let data: Pointer[None]
+  let data: Pointer[None] tag
 
-  new create(frame_count': U32, sample_rate': U32, sample_size': U32, channels': U32, data': Pointer[None]) =>
+  new create(frame_count': U32, sample_rate': U32, sample_size': U32, channels': U32, data': Pointer[None] tag) =>
     frame_count = frame_count'
     sample_rate = sample_rate'
     sample_size = sample_size'
@@ -1041,13 +1601,13 @@ struct Wave
     data = data'
 
 struct AudioStream
-  let buffer: Pointer[RAudioBuffer]
-  let processor: Pointer[RAudioProcessor]
+  let buffer: Pointer[RAudioBuffer] tag
+  let processor: Pointer[RAudioProcessor] tag
   let sample_rate: U32
   let sample_size: U32
   let channels: U32
 
-  new create(buffer': Pointer[RAudioBuffer], processor': Pointer[RAudioProcessor], sample_rate': U32, sample_size': U32, channels': U32) =>
+  new create(buffer': Pointer[RAudioBuffer] tag, processor': Pointer[RAudioProcessor] tag, sample_rate': U32, sample_size': U32, channels': U32) =>
     buffer = buffer'
     processor = processor'
     sample_rate = sample_rate'
@@ -1067,9 +1627,9 @@ struct Music
   let frame_count: U32
   let looping: Bool
   let ctx_type: I32
-  let ctx_data: Pointer[None]
+  let ctx_data: Pointer[None] tag
 
-  new create(stream': AudioStream, frame_count': U32, looping': Bool, ctx_type': I32, ctx_data': Pointer[None]) =>
+  new create(stream': AudioStream, frame_count': U32, looping': Bool, ctx_type': I32, ctx_data': Pointer[None] tag) =>
     stream = stream'
     frame_count = frame_count'
     looping = looping'
@@ -1085,10 +1645,10 @@ struct VrDeviceInfo
   let eye_to_screen_distance: F32
   let lens_separation_distance: F32
   let interpupillary_distance: F32
-  let lens_distortion_values: Pointer[F32]
-  let chroma_ab_correction: Pointer[F32]
+  let lens_distortion_values: Pointer[F32] tag
+  let chroma_ab_correction: Pointer[F32] tag
 
-  new create(h_resolution': I32, v_resolution': I32, h_screen_size': F32, v_screen_size': F32, v_screen_center': F32, eye_to_screen_distance': F32, lens_separation_distance': F32, interpupillary_distance': F32, lens_distortion_values': Pointer[F32], chroma_ab_correction': Pointer[F32]) =>
+  new create(h_resolution': I32, v_resolution': I32, h_screen_size': F32, v_screen_size': F32, v_screen_center': F32, eye_to_screen_distance': F32, lens_separation_distance': F32, interpupillary_distance': F32, lens_distortion_values': Pointer[F32] tag, chroma_ab_correction': Pointer[F32] tag) =>
     h_resolution = h_resolution'
     v_resolution = v_resolution'
     h_screen_size = h_screen_size'
@@ -1101,16 +1661,16 @@ struct VrDeviceInfo
     chroma_ab_correction = chroma_ab_correction'
 
 struct VrStereoConfig
-  let projection: Pointer[Matrix]
-  let view_offset: Pointer[Matrix]
-  let left_lens_center: Pointer[F32]
-  let right_lens_center: Pointer[F32]
-  let left_screen_center: Pointer[F32]
-  let right_screen_center: Pointer[F32]
-  let scale: Pointer[F32]
-  let scale_in: Pointer[F32]
+  let projection: Pointer[Matrix] tag
+  let view_offset: Pointer[Matrix] tag
+  let left_lens_center: Pointer[F32] tag
+  let right_lens_center: Pointer[F32] tag
+  let left_screen_center: Pointer[F32] tag
+  let right_screen_center: Pointer[F32] tag
+  let scale: Pointer[F32] tag
+  let scale_in: Pointer[F32] tag
 
-  new create(projection': Pointer[Matrix], view_offset': Pointer[Matrix], left_lens_center': Pointer[F32], right_lens_center': Pointer[F32], left_screen_center': Pointer[F32], right_screen_center': Pointer[F32], scale': Pointer[F32], scale_in': Pointer[F32]) =>
+  new create(projection': Pointer[Matrix] tag, view_offset': Pointer[Matrix] tag, left_lens_center': Pointer[F32] tag, right_lens_center': Pointer[F32] tag, left_screen_center': Pointer[F32] tag, right_screen_center': Pointer[F32] tag, scale': Pointer[F32] tag, scale_in': Pointer[F32] tag) =>
     projection = projection'
     view_offset = view_offset'
     left_lens_center = left_lens_center'
@@ -1123,29 +1683,29 @@ struct VrStereoConfig
 struct FilePathList
   let capacity: U32
   let count: U32
-  let paths: Pointer[Pointer[U8]]
+  let paths: Pointer[Pointer[U8] tag] tag
 
-  new create(capacity': U32, count': U32, paths': Pointer[Pointer[U8]]) =>
+  new create(capacity': U32, count': U32, paths': Pointer[Pointer[U8] tag] tag) =>
     capacity = capacity'
     count = count'
     paths = paths'
 
 struct AutomationEvent
   let frame: U32
-  let typ: U32
-  let params: Pointer[I32]
+  let type': U32
+  let params: Pointer[I32] tag
 
-  new create(frame': U32, typ': U32, params': Pointer[I32]) =>
+  new create(frame': U32, type'': U32, params': Pointer[I32] tag) =>
     frame = frame'
-    typ = typ'
+    type' = type''
     params = params'
 
 struct AutomationEventList
   let capacity: U32
   let count: U32
-  let events: Pointer[AutomationEvent]
+  let events: Pointer[AutomationEvent] tag
 
-  new create(capacity': U32, count': U32, events': Pointer[AutomationEvent]) =>
+  new create(capacity': U32, count': U32, events': Pointer[AutomationEvent] tag) =>
     capacity = capacity'
     count = count'
     events = events'

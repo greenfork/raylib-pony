@@ -87,6 +87,7 @@ class Generator
     // deref_color(void** ptr) {
     // 	return *ptr;
     // };
+    let gen = FunctionGenerator(_file)
     let functions = _json.data("functions")? as JsonArray
     for function' in functions.data.values() do
       let function = function' as JsonObject
@@ -103,8 +104,9 @@ class Generator
         let param = param' as JsonObject
         let param_name = param.data("name")? as String
         let param_type = param.data("type")? as String
-        params.push((param_name, param_type))
+        params.push((Idents.whitelist(param_name), Types.c_to_pony(param_type)?))
       end
+      gen.generate(name, Types.c_to_pony(return_type)?, params)
     end
 
   fun ref gen_enums() ? =>
@@ -157,6 +159,32 @@ class Generator
 type EnumValues is Array[(String val, I64)]
 type FieldValues is Array[(String val, String val)]
 type FunctionParams is Array[(String val, String val)]
+
+class FunctionGenerator
+  let _file: File
+
+  new create(file: File) => _file = file
+
+  // use @InitWindow[None](w: I32, h: I32, title: Pointer[U8] tag)
+  fun ref generate(function_name: String val, return_type: String val,
+    params: FunctionParams)
+  =>
+    _file.queue("use @" + function_name + "[" + return_type + "](")
+    var first_param = true
+    for (name, typ) in params.values() do
+      if first_param then
+        first_param = false
+      else
+        _file.queue(", ")
+      end
+      if typ == "..." then
+        _file.queue("...")
+      else
+        _file.queue(name + ": " + typ)
+      end
+    end
+    _file.queue(")\n")
+    _file.flush()
 
 class EnumGenerator
   let _file: File
@@ -226,6 +254,13 @@ class StructGenerator
     _file.write("""
     primitive RAudioBuffer
     primitive RAudioProcessor
+    // TODO: implement callbacks
+    primitive TraceLogCallback
+    primitive LoadFileDataCallback
+    primitive SaveFileDataCallback
+    primitive LoadFileTextCallback
+    primitive SaveFileTextCallback
+    primitive AudioCallback
     """)
 
 class AliasGenerator
@@ -277,9 +312,11 @@ primitive Idents
     s.lower_in_place()
     consume s
 
-  fun whitelist(s: String box): String box =>
+  fun whitelist(s: String val): String val =>
     match s
-    | "type" => "typ"
+    | "type" => "type'"
+    | "end" => "end'"
+    | "box" => "box'"
     else s
     end
 
@@ -288,11 +325,16 @@ primitive Types
     try
       Types._c_to_pony_hardcoded(s)?
     else
-      if Stringx.ends_with(s, '*') then
+      if Stringx.starts_with(s, "const ") then
+        // "const ".size() == 6
+        // c_to_pony(s.trim(6))? + " val"
+        // TODO: do something with const
+        c_to_pony(s.trim(6))?
+      elseif Stringx.ends_with(s, '*') then
         // BoneInfo *
         let parts = recover ref s.split(" ") end
         if parts.size() < 2 then
-          Debug("parts size is less than two for '" + s + "'")
+          Debug("Parts size is less than two for '" + s + "'")
           error
         end
         let typ' = " ".join(parts.slice(0, parts.size() - 1).values())
@@ -300,8 +342,8 @@ primitive Types
         let stars = parts(parts.size() - 1)?
         // Debug("s: '" + s + "', typ: '" + typ + "', stars: '" + stars + "'")
         match stars
-        | "*" => "Pointer[" + c_to_pony(typ)? + "]"
-        | "**" => "Pointer[Pointer[" + c_to_pony(typ)? + "]]"
+        | "*" => "Pointer[" + c_to_pony(typ)? + "] tag"
+        | "**" => "Pointer[Pointer[" + c_to_pony(typ)? + "] tag] tag"
         else
           Debug("Ends with star but is '" + s + "'")
           error
@@ -319,7 +361,7 @@ primitive Types
             Debug("Failed to read a number: '" + array_part + "'")
             error
           end
-        "Pointer[" + c_to_pony(base_type)? + "]"
+        "Pointer[" + c_to_pony(base_type)? + "] tag"
       else
         s
       end
@@ -332,12 +374,15 @@ primitive Types
     | "unsigned char" => "U8"
     | "void" => "None"
     | "unsigned int" => "U32"
-    | "unsigned char *" => "String"
     | "bool" => "Bool"
     | "char" => "U8"
     | "unsigned short" => "U16"
     | "rAudioBuffer" => "RAudioBuffer"
     | "rAudioProcessor" => "RAudioProcessor"
+    | "float*" => "Pointer[F32] tag"
+    | "unsigned char" => "U8"
+    | "double" => "F64"
+    | "long" => "I64"
     else
       // Debug("Not hardcoded type '" + s + "'")
       error
@@ -349,7 +394,19 @@ primitive Stringx
     try
       s(s.size() - 1)? == c
     else
-      Debug("_ends_with failed")
+      Debug("ends_with failed")
+      false
+    end
+
+  fun starts_with(s: String box, prefix: String box): Bool =>
+    if prefix.size() > s.size() then return false end
+    try
+      for i in Range(0, prefix.size()) do
+        if prefix(i)? != s(i)? then return false end
+      end
+      true
+    else
+      Debug("starts_with failed")
       false
     end
 

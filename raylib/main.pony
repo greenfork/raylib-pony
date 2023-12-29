@@ -2,18 +2,18 @@ use "path:../zig-out/lib"
 use "lib:raylibc"
 use "lib:shims"
 
-use @InitWindow[None](w: I32, h: I32, title: Pointer[U8] tag)
-use @CloseWindow[None]()
-use @SetTargetFPS[None](fps: I32)
-use @BeginDrawing[None]()
-use @EndDrawing[None]()
-use @ClearBackground[None](color: CColor)
-use @DrawText[None](text: Pointer[U8] tag, posx: I32, posy: I32, font_size: I32, color: CColor)
-use @WindowShouldClose[Bool]()
+// use @InitWindow[None](w: I32, h: I32, title: Pointer[U8] tag)
+// use @CloseWindow[None]()
+// use @SetTargetFPS[None](fps: I32)
+// use @BeginDrawing[None]()
+// use @EndDrawing[None]()
+// use @ClearBackground[None](color: CColor)
+// use @DrawText[None](text: Pointer[U8] tag, posx: I32, posy: I32, font_size: I32, color: CColor)
+// use @WindowShouldClose[Bool]()
 
-use @deref_color[CColor](ptr: Color)
+use @deref_color[_Color](ptr: Color)
 
-primitive CColor
+primitive _Color
 
 struct val ColorR
   let r: U8
