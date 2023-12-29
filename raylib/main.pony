@@ -11,7 +11,7 @@ use "lib:shims"
 // use @DrawText[None](text: Pointer[U8] tag, posx: I32, posy: I32, font_size: I32, color: CColor)
 // use @WindowShouldClose[Bool]()
 
-use @deref_color[_Color](ptr: Color)
+// use @deref_color[_Color](ptr: Color)
 
 // primitive _Color
 

@@ -44,31 +44,45 @@ actor Main
         env.err.print("Unable to list struct names")
         return
       end
+    let function_generator =
+      try
+        generator.gen_functions(struct_names)?
+      else
+        env.err.print("Unable to initialize function generator")
+        return
+      end
+    let enum_generator =
+      try
+        generator.gen_enums()?
+      else
+        env.err.print("Unable to generate enums")
+        return
+      end
+    let struct_generator =
+      try
+        generator.gen_structs()?
+      else
+        env.err.print("Unable to generate structs")
+        return
+      end
+    let alias_generator =
+      try
+        generator.gen_aliases()?
+      else
+        env.err.print("Unable to generate aliases")
+        return
+      end
+
     generator.gen_common()
-    try
-      generator.gen_functions(struct_names)?
-    else
-      env.err.print("Unable to generate functions")
-      return
-    end
-    try
-      generator.gen_enums()?
-    else
-      env.err.print("Unable to generate enums")
-      return
-    end
-    try
-      generator.gen_structs()?
-    else
-      env.err.print("Unable to generate structs")
-      return
-    end
-    try
-      generator.gen_aliases()?
-    else
-      env.err.print("Unable to generate aliases")
-      return
-    end
+    function_generator.generate_use_statements()
+    struct_generator.generate_use_statements()
+
+    enum_generator.generate()
+    struct_generator.generate_statements()
+    struct_generator.generate_type_stubs()
+    alias_generator.generate_statements()
+
+    struct_generator.generate_c()
 
 class Generator
   let _json: JsonObject
@@ -88,43 +102,44 @@ class Generator
     _file.write("""
     use "collections"
     """)
+    _cfile.write("""
+    #include <raylib.h>
+    """)
 
-  fun ref gen_functions(struct_names: Set[String]) ? =>
-    // void*
-    // deref_color(void** ptr) {
-    // 	return *ptr;
-    // };
+  fun ref gen_functions(struct_names: Set[String]): FunctionGenerator ? =>
     let gen = FunctionGenerator(_file)
     let functions = _json.data("functions")? as JsonArray
     for function' in functions.data.values() do
       let function = function' as JsonObject
       let name = function.data("name")? as String
-      let return_type = function.data("returnType")? as String
+      let return_type = Types.c_to_pony(function.data("returnType")? as String)?
       let params' =
         try
           (function.data("params")? as JsonArray).data
         else
           [as JsonType:]
         end
-      let params = FunctionParams
+      let params = Array[FunctionParam]
       for param' in params'.values() do
         let param = param' as JsonObject
         let param_name = param.data("name")? as String
         let param_type' = param.data("type")? as String
         let param_type = Types.add_underscore(param_type', struct_names)
-        params.push((Idents.whitelist(param_name), Types.c_to_pony(param_type)?))
+        params.push(
+          (Idents.whitelist(param_name), Types.c_to_pony(param_type)?))
       end
-      gen.generate(name, Types.c_to_pony(return_type)?, params)
+      gen.add((name, return_type, params))
     end
+    gen
 
-  fun ref gen_enums() ? =>
+  fun ref gen_enums(): EnumGenerator ? =>
     let gen = EnumGenerator(_file)
     let enums = _json.data("enums")? as JsonArray
     for enum' in enums.data.values() do
       let enum = enum' as JsonObject
       let name = enum.data("name")? as String
       let values' = enum.data("values")? as JsonArray
-      let values = EnumValues
+      let values = Array[EnumValue]
       for value' in values'.data.values() do
         let value_obj = value' as JsonObject
         let value_name' = Idents.whitelist(value_obj.data("name")? as String)
@@ -132,18 +147,18 @@ class Generator
         let value = value_obj.data("value")? as I64
         values.push((value_name, value))
       end
-      gen.generate(name, values)
+      gen.add((name, values))
     end
+    gen
 
-  fun ref gen_structs() ? =>
+  fun ref gen_structs(): StructGenerator ? =>
     let gen = StructGenerator(_file, _cfile)
-    gen.generate_type_stubs()
     let structs = _json.data("structs")? as JsonArray
     for struct' in structs.data.values() do
       let str = struct' as JsonObject
       let name = str.data("name")? as String
       let fields' = str.data("fields")? as JsonArray
-      let fields = FieldValues
+      let fields = Array[StructField]
       for field' in fields'.data.values() do
         let field = field' as JsonObject
         let field_name = Idents.whitelist(field.data("name")? as String)
@@ -151,18 +166,20 @@ class Generator
         let pony_field_type = Types.c_to_pony(c_field_type)?
         fields.push((Idents.camel_to_snake(field_name), pony_field_type))
       end
-      gen.generate(name, fields)
+      gen.add((name, fields))
     end
+    gen
 
-  fun ref gen_aliases() ? =>
+  fun ref gen_aliases(): AliasGenerator ? =>
     let gen = AliasGenerator(_file)
     let aliases = _json.data("aliases")? as JsonArray
     for alias' in aliases.data.values() do
       let alias = alias' as JsonObject
       let name = alias.data("name")? as String
-      let typ = alias.data("type")? as String
-      gen.generate(name, typ)
+      let type' = alias.data("type")? as String
+      gen.add((name, type'))
     end
+    gen
 
   fun ref list_struct_names(): Set[String] ? =>
     let names = Set[String]
@@ -173,100 +190,126 @@ class Generator
     end
     names
 
-type EnumValues is Array[(String val, I64)]
-type FieldValues is Array[(String val, String val)]
-type FunctionParams is Array[(String val, String val)]
-
+type FunctionParam is (String val, String val)
+type FunctionDesc is (String val, String val, Array[FunctionParam])
 class FunctionGenerator
   let _file: File
+  let _functions: Array[FunctionDesc] = Array[FunctionDesc]
 
   new create(file: File) => _file = file
 
-  // use @InitWindow[None](w: I32, h: I32, title: Pointer[U8] tag)
-  fun ref generate(function_name: String val, return_type: String val,
-    params: FunctionParams)
-  =>
-    _file.queue("use @" + function_name + "[" + return_type + "](")
-    var first_param = true
-    for (name, typ) in params.values() do
-      if first_param then
-        first_param = false
-      else
-        _file.queue(", ")
-      end
-      if typ == "..." then
-        _file.queue("...")
-      else
-        _file.queue(name + ": " + typ)
-      end
-    end
-    _file.queue(")\n")
-    _file.flush()
+  fun ref add(desc: FunctionDesc) => _functions.push(desc)
 
+  fun ref generate_use_statements() =>
+    for (name, return_type, params) in _functions.values() do
+      _file.queue("use @" + name + "[" + return_type + "](")
+      var first_param = true
+      for (n, typ) in params.values() do
+        if first_param then
+          first_param = false
+        else
+          _file.queue(", ")
+        end
+        if typ == "..." then
+          _file.queue("...")
+        else
+          _file.queue(n + ": " + typ)
+        end
+      end
+      _file.queue(")\n")
+      _file.flush()
+    end
+
+type EnumValue is (String val, I64)
+type EnumDesc is (String val, Array[EnumValue])
 class EnumGenerator
   let _file: File
+  let _enums: Array[EnumDesc] = Array[EnumDesc]
 
   new create(file: File) => _file = file
 
-  fun ref generate(enum_name: String val, values: EnumValues) =>
-    if (enum_name == "ConfigFlags") or (enum_name == "Gesture") then
-      for (name, value) in values.values() do
-        _file.queue(
-          "primitive " + name + " fun value(): U32 => " + value.string() + "\n"
-        )
-      end
-      var first_flag = true
-      _file.queue("\ntype " + enum_name + " is Flags [\n")
-      for (name, _) in values.values() do
-        _file.queue("  " + if first_flag then "( " else "| " end + name + "\n")
-        first_flag = false
-      end
-      _file.queue("), U32]\n\n")
-    else
-      for (name, value) in values.values() do
-        _file.queue(
-          "primitive " + name + " fun apply(): I32 => " + value.string() + "\n"
-        )
-      end
-      var first_flag = true
-      _file.queue("\ntype " + enum_name + " is\n")
-      for (name, _) in values.values() do
-        _file.queue("  " + if first_flag then "( " else "| " end + name + "\n")
-        first_flag = false
-      end
-      _file.queue(")\n\n")
-    end
-    _file.flush()
+  fun ref add(desc: EnumDesc) => _enums.push(desc)
 
+  fun ref generate() =>
+    for (enum_name, values) in _enums.values() do
+      if (enum_name == "ConfigFlags") or (enum_name == "Gesture") then
+        for (name, value) in values.values() do
+          _file.queue("primitive " + name + " fun value(): U32 => " +
+            value.string() + "\n")
+        end
+        var first_flag = true
+        _file.queue("\ntype " + enum_name + " is Flags [\n")
+        for (name, _) in values.values() do
+          _file.queue("  " + if first_flag then "( " else "| " end + name
+            + "\n")
+          first_flag = false
+        end
+        _file.queue("), U32]\n\n")
+      else
+        for (name, value) in values.values() do
+          _file.queue("primitive " + name + " fun apply(): I32 => " +
+            value.string() + "\n")
+        end
+        var first_flag = true
+        _file.queue("\ntype " + enum_name + " is\n")
+        for (name, _) in values.values() do
+          _file.queue("  " + if first_flag then "( " else "| " end + name +
+            "\n")
+          first_flag = false
+        end
+        _file.queue(")\n\n")
+      end
+      _file.flush()
+    end
+
+type StructField is (String val, String val)
+type StructDesc is (String val, Array[StructField])
 class StructGenerator
   let _file: File
   let _cfile: File
+  let _structs: Array[StructDesc] = Array[StructDesc]
 
   new create(file: File, cfile: File) =>
     _file = file
     _cfile = cfile
 
-  fun ref generate(struct_name: String val, fields: FieldValues) =>
-    _file.queue("\nprimitive _" + struct_name + "\n")
-    _file.queue("struct " + struct_name + "\n")
-    for (name, typ) in fields.values() do
-      _file.queue("  let " + name + ": " + typ + "\n")
+  fun ref add(desc: StructDesc) => _structs.push(desc)
+
+  fun ref generate_c() =>
+    for (name, _) in _structs.values() do
+      _cfile.write(name + " deref_" + Idents.camel_to_snake(name) +
+        "(" + name + "* ptr) { return *ptr; };\n")
     end
-    _file.queue("\n  new create(")
-    var first_param = true
-    for (name, typ) in fields.values() do
-      if first_param then
-        _file.queue(name + "': " + typ)
-        first_param = false
-      else
-        _file.queue(", " + name + "': " + typ)
+
+  fun ref generate_use_statements() =>
+    for (name, _) in _structs.values() do
+      _file.write("\nuse @deref_" + Idents.camel_to_snake(name) +
+        "[_" + name + "](ptr: " + name + ")")
+    end
+
+  fun ref generate_statements() =>
+    for (struct_name, fields) in _structs.values() do
+      _file.queue("primitive _" + struct_name + "\n")
+      _file.queue("struct " + struct_name + "\n")
+      for (name, typ) in fields.values() do
+        _file.queue("  let " + name + ": " + typ + "\n")
       end
+      _file.queue("\n  new create(")
+      var first_param = true
+      for (name, typ) in fields.values() do
+        if first_param then
+          _file.queue(name + "': " + typ)
+          first_param = false
+        else
+          _file.queue(", " + name + "': " + typ)
+        end
+      end
+      _file.queue(") =>\n")
+      for (name, typ) in fields.values() do
+        _file.queue("    " + name + " = " + name + "'\n")
+      end
+      _file.flush()
     end
-    _file.queue(") =>\n")
-    for (name, typ) in fields.values() do
-      _file.queue("    " + name + " = " + name + "'\n")
-    end
-    _file.flush()
 
   fun ref generate_type_stubs() =>
     _file.write("""
@@ -281,13 +324,19 @@ class StructGenerator
     primitive AudioCallback
     """)
 
+type AliasDesc is (String val, String val)
 class AliasGenerator
   let _file: File
+  let _aliases: Array[AliasDesc] = Array[AliasDesc]
 
   new create(file: File) => _file = file
 
-  fun ref generate(name: String, typ: String) =>
-    _file.write("\ntype " + name + " is " + typ)
+  fun ref add(desc: AliasDesc) => _aliases.push(desc)
+
+  fun ref generate_statements() =>
+    for (name, type') in _aliases.values() do
+      _file.write("\ntype " + name + " is " + type')
+    end
 
 primitive ASCII
   fun upper(c: U8): U8 =>
@@ -313,9 +362,10 @@ primitive Idents
       end
     }
 
-  fun camel_to_snake(string: String box): String =>
+  fun camel_to_snake(string: String val): String =>
+    if string.size() <= 1 then return string end
     let s: String trn = string.clone()
-    var offset: ISize = 0
+    var offset: ISize = 1
     while true do
       try
         offset = Stringx.find_upper(s, offset.usize())?

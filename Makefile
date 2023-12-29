@@ -1,8 +1,9 @@
 generate:
 	corral run -- ponyc -d -o build generate/
-	rm raylib/raylib.pony
+	rm -f raylib/raylib.pony src/shims.c
 	./build/generate
 	cat raylib/raylib.pony
+	# cat src/shims.c
 
 example: build
 	./build/raylib

@@ -1,4 +1,35 @@
-void*
-deref_color(void** ptr) {
-	return *ptr;
-};
+#include <raylib.h>
+Vector2 deref_vector2(Vector2* ptr) { return *ptr; };
+Vector3 deref_vector3(Vector3* ptr) { return *ptr; };
+Vector4 deref_vector4(Vector4* ptr) { return *ptr; };
+Matrix deref_matrix(Matrix* ptr) { return *ptr; };
+Color deref_color(Color* ptr) { return *ptr; };
+Rectangle deref_rectangle(Rectangle* ptr) { return *ptr; };
+Image deref_image(Image* ptr) { return *ptr; };
+Texture deref_texture(Texture* ptr) { return *ptr; };
+RenderTexture deref_render_texture(RenderTexture* ptr) { return *ptr; };
+NPatchInfo deref_n_patch_info(NPatchInfo* ptr) { return *ptr; };
+GlyphInfo deref_glyph_info(GlyphInfo* ptr) { return *ptr; };
+Font deref_font(Font* ptr) { return *ptr; };
+Camera3D deref_camera3_d(Camera3D* ptr) { return *ptr; };
+Camera2D deref_camera2_d(Camera2D* ptr) { return *ptr; };
+Mesh deref_mesh(Mesh* ptr) { return *ptr; };
+Shader deref_shader(Shader* ptr) { return *ptr; };
+MaterialMap deref_material_map(MaterialMap* ptr) { return *ptr; };
+Material deref_material(Material* ptr) { return *ptr; };
+Transform deref_transform(Transform* ptr) { return *ptr; };
+BoneInfo deref_bone_info(BoneInfo* ptr) { return *ptr; };
+Model deref_model(Model* ptr) { return *ptr; };
+ModelAnimation deref_model_animation(ModelAnimation* ptr) { return *ptr; };
+Ray deref_ray(Ray* ptr) { return *ptr; };
+RayCollision deref_ray_collision(RayCollision* ptr) { return *ptr; };
+BoundingBox deref_bounding_box(BoundingBox* ptr) { return *ptr; };
+Wave deref_wave(Wave* ptr) { return *ptr; };
+AudioStream deref_audio_stream(AudioStream* ptr) { return *ptr; };
+Sound deref_sound(Sound* ptr) { return *ptr; };
+Music deref_music(Music* ptr) { return *ptr; };
+VrDeviceInfo deref_vr_device_info(VrDeviceInfo* ptr) { return *ptr; };
+VrStereoConfig deref_vr_stereo_config(VrStereoConfig* ptr) { return *ptr; };
+FilePathList deref_file_path_list(FilePathList* ptr) { return *ptr; };
+AutomationEvent deref_automation_event(AutomationEvent* ptr) { return *ptr; };
+AutomationEventList deref_automation_event_list(AutomationEventList* ptr) { return *ptr; };

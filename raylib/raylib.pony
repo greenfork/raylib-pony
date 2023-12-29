@@ -552,7 +552,41 @@ use @AttachAudioStreamProcessor[None](stream: _AudioStream, processor: AudioCall
 use @DetachAudioStreamProcessor[None](stream: _AudioStream, processor: AudioCallback)
 use @AttachAudioMixedProcessor[None](processor: AudioCallback)
 use @DetachAudioMixedProcessor[None](processor: AudioCallback)
-primitive FlagVsyncHint fun value(): U32 => 64
+
+use @deref_vector2[_Vector2](ptr: Vector2)
+use @deref_vector3[_Vector3](ptr: Vector3)
+use @deref_vector4[_Vector4](ptr: Vector4)
+use @deref_matrix[_Matrix](ptr: Matrix)
+use @deref_color[_Color](ptr: Color)
+use @deref_rectangle[_Rectangle](ptr: Rectangle)
+use @deref_image[_Image](ptr: Image)
+use @deref_texture[_Texture](ptr: Texture)
+use @deref_render_texture[_RenderTexture](ptr: RenderTexture)
+use @deref_n_patch_info[_NPatchInfo](ptr: NPatchInfo)
+use @deref_glyph_info[_GlyphInfo](ptr: GlyphInfo)
+use @deref_font[_Font](ptr: Font)
+use @deref_camera3_d[_Camera3D](ptr: Camera3D)
+use @deref_camera2_d[_Camera2D](ptr: Camera2D)
+use @deref_mesh[_Mesh](ptr: Mesh)
+use @deref_shader[_Shader](ptr: Shader)
+use @deref_material_map[_MaterialMap](ptr: MaterialMap)
+use @deref_material[_Material](ptr: Material)
+use @deref_transform[_Transform](ptr: Transform)
+use @deref_bone_info[_BoneInfo](ptr: BoneInfo)
+use @deref_model[_Model](ptr: Model)
+use @deref_model_animation[_ModelAnimation](ptr: ModelAnimation)
+use @deref_ray[_Ray](ptr: Ray)
+use @deref_ray_collision[_RayCollision](ptr: RayCollision)
+use @deref_bounding_box[_BoundingBox](ptr: BoundingBox)
+use @deref_wave[_Wave](ptr: Wave)
+use @deref_audio_stream[_AudioStream](ptr: AudioStream)
+use @deref_sound[_Sound](ptr: Sound)
+use @deref_music[_Music](ptr: Music)
+use @deref_vr_device_info[_VrDeviceInfo](ptr: VrDeviceInfo)
+use @deref_vr_stereo_config[_VrStereoConfig](ptr: VrStereoConfig)
+use @deref_file_path_list[_FilePathList](ptr: FilePathList)
+use @deref_automation_event[_AutomationEvent](ptr: AutomationEvent)
+use @deref_automation_event_list[_AutomationEventList](ptr: AutomationEventList)primitive FlagVsyncHint fun value(): U32 => 64
 primitive FlagFullscreenMode fun value(): U32 => 2
 primitive FlagWindowResizable fun value(): U32 => 4
 primitive FlagWindowUndecorated fun value(): U32 => 8
@@ -1232,16 +1266,6 @@ type NPatchLayout is
   | NPatchThreePatchHorizontal
 )
 
-primitive RAudioBuffer
-primitive RAudioProcessor
-// TODO: implement callbacks
-primitive TraceLogCallback
-primitive LoadFileDataCallback
-primitive SaveFileDataCallback
-primitive LoadFileTextCallback
-primitive SaveFileTextCallback
-primitive AudioCallback
-
 primitive _Vector2
 struct Vector2
   let x: F32
@@ -1250,7 +1274,6 @@ struct Vector2
   new create(x': F32, y': F32) =>
     x = x'
     y = y'
-
 primitive _Vector3
 struct Vector3
   let x: F32
@@ -1261,7 +1284,6 @@ struct Vector3
     x = x'
     y = y'
     z = z'
-
 primitive _Vector4
 struct Vector4
   let x: F32
@@ -1274,7 +1296,6 @@ struct Vector4
     y = y'
     z = z'
     w = w'
-
 primitive _Matrix
 struct Matrix
   let m0: F32
@@ -1311,7 +1332,6 @@ struct Matrix
     m7 = m7'
     m11 = m11'
     m15 = m15'
-
 primitive _Color
 struct Color
   let r: U8
@@ -1324,7 +1344,6 @@ struct Color
     g = g'
     b = b'
     a = a'
-
 primitive _Rectangle
 struct Rectangle
   let x: F32
@@ -1337,7 +1356,6 @@ struct Rectangle
     y = y'
     width = width'
     height = height'
-
 primitive _Image
 struct Image
   let data: Pointer[None] tag
@@ -1352,7 +1370,6 @@ struct Image
     height = height'
     mipmaps = mipmaps'
     format = format'
-
 primitive _Texture
 struct Texture
   let id: U32
@@ -1367,7 +1384,6 @@ struct Texture
     height = height'
     mipmaps = mipmaps'
     format = format'
-
 primitive _RenderTexture
 struct RenderTexture
   let id: U32
@@ -1378,7 +1394,6 @@ struct RenderTexture
     id = id'
     texture = texture'
     depth = depth'
-
 primitive _NPatchInfo
 struct NPatchInfo
   let source: Rectangle
@@ -1395,7 +1410,6 @@ struct NPatchInfo
     right = right'
     bottom = bottom'
     layout = layout'
-
 primitive _GlyphInfo
 struct GlyphInfo
   let value: I32
@@ -1410,7 +1424,6 @@ struct GlyphInfo
     offset_y = offset_y'
     advance_x = advance_x'
     image = image'
-
 primitive _Font
 struct Font
   let base_size: I32
@@ -1427,7 +1440,6 @@ struct Font
     texture = texture'
     recs = recs'
     glyphs = glyphs'
-
 primitive _Camera3D
 struct Camera3D
   let position: Vector3
@@ -1442,7 +1454,6 @@ struct Camera3D
     up = up'
     fovy = fovy'
     projection = projection'
-
 primitive _Camera2D
 struct Camera2D
   let offset: Vector2
@@ -1455,7 +1466,6 @@ struct Camera2D
     target = target'
     rotation = rotation'
     zoom = zoom'
-
 primitive _Mesh
 struct Mesh
   let vertex_count: I32
@@ -1490,7 +1500,6 @@ struct Mesh
     bone_weights = bone_weights'
     vao_id = vao_id'
     vbo_id = vbo_id'
-
 primitive _Shader
 struct Shader
   let id: U32
@@ -1499,7 +1508,6 @@ struct Shader
   new create(id': U32, locs': Pointer[I32] tag) =>
     id = id'
     locs = locs'
-
 primitive _MaterialMap
 struct MaterialMap
   let texture: Texture2D
@@ -1510,7 +1518,6 @@ struct MaterialMap
     texture = texture'
     color = color'
     value = value'
-
 primitive _Material
 struct Material
   let shader: Shader
@@ -1521,7 +1528,6 @@ struct Material
     shader = shader'
     maps = maps'
     params = params'
-
 primitive _Transform
 struct Transform
   let translation: Vector3
@@ -1532,7 +1538,6 @@ struct Transform
     translation = translation'
     rotation = rotation'
     scale = scale'
-
 primitive _BoneInfo
 struct BoneInfo
   let name: Pointer[U8] tag
@@ -1541,7 +1546,6 @@ struct BoneInfo
   new create(name': Pointer[U8] tag, parent': I32) =>
     name = name'
     parent = parent'
-
 primitive _Model
 struct Model
   let transform: Matrix
@@ -1564,7 +1568,6 @@ struct Model
     bone_count = bone_count'
     bones = bones'
     bind_pose = bind_pose'
-
 primitive _ModelAnimation
 struct ModelAnimation
   let bone_count: I32
@@ -1579,7 +1582,6 @@ struct ModelAnimation
     bones = bones'
     frame_poses = frame_poses'
     name = name'
-
 primitive _Ray
 struct Ray
   let position: Vector3
@@ -1588,7 +1590,6 @@ struct Ray
   new create(position': Vector3, direction': Vector3) =>
     position = position'
     direction = direction'
-
 primitive _RayCollision
 struct RayCollision
   let hit: Bool
@@ -1601,7 +1602,6 @@ struct RayCollision
     distance = distance'
     point = point'
     normal = normal'
-
 primitive _BoundingBox
 struct BoundingBox
   let min: Vector3
@@ -1610,7 +1610,6 @@ struct BoundingBox
   new create(min': Vector3, max': Vector3) =>
     min = min'
     max = max'
-
 primitive _Wave
 struct Wave
   let frame_count: U32
@@ -1625,7 +1624,6 @@ struct Wave
     sample_size = sample_size'
     channels = channels'
     data = data'
-
 primitive _AudioStream
 struct AudioStream
   let buffer: Pointer[RAudioBuffer] tag
@@ -1640,7 +1638,6 @@ struct AudioStream
     sample_rate = sample_rate'
     sample_size = sample_size'
     channels = channels'
-
 primitive _Sound
 struct Sound
   let stream: AudioStream
@@ -1649,7 +1646,6 @@ struct Sound
   new create(stream': AudioStream, frame_count': U32) =>
     stream = stream'
     frame_count = frame_count'
-
 primitive _Music
 struct Music
   let stream: AudioStream
@@ -1664,7 +1660,6 @@ struct Music
     looping = looping'
     ctx_type = ctx_type'
     ctx_data = ctx_data'
-
 primitive _VrDeviceInfo
 struct VrDeviceInfo
   let h_resolution: I32
@@ -1689,7 +1684,6 @@ struct VrDeviceInfo
     interpupillary_distance = interpupillary_distance'
     lens_distortion_values = lens_distortion_values'
     chroma_ab_correction = chroma_ab_correction'
-
 primitive _VrStereoConfig
 struct VrStereoConfig
   let projection: Pointer[Matrix] tag
@@ -1710,7 +1704,6 @@ struct VrStereoConfig
     right_screen_center = right_screen_center'
     scale = scale'
     scale_in = scale_in'
-
 primitive _FilePathList
 struct FilePathList
   let capacity: U32
@@ -1721,7 +1714,6 @@ struct FilePathList
     capacity = capacity'
     count = count'
     paths = paths'
-
 primitive _AutomationEvent
 struct AutomationEvent
   let frame: U32
@@ -1732,7 +1724,6 @@ struct AutomationEvent
     frame = frame'
     type' = type''
     params = params'
-
 primitive _AutomationEventList
 struct AutomationEventList
   let capacity: U32
@@ -1743,6 +1734,15 @@ struct AutomationEventList
     capacity = capacity'
     count = count'
     events = events'
+primitive RAudioBuffer
+primitive RAudioProcessor
+// TODO: implement callbacks
+primitive TraceLogCallback
+primitive LoadFileDataCallback
+primitive SaveFileDataCallback
+primitive LoadFileTextCallback
+primitive SaveFileTextCallback
+primitive AudioCallback
 
 type Quaternion is Vector4
 type Texture2D is Texture
