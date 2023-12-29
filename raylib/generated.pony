@@ -1,3 +1,6 @@
+use "path:../zig-out/lib"
+use "lib:raylibc"
+use "lib:shims"
 use "collections"
 use @InitWindow[None](width: I32, height: I32, title: Pointer[U8] tag)
 use @CloseWindow[None]()

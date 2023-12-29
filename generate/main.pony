@@ -25,7 +25,7 @@ actor Main
         return
       end
 
-    let target_file_path' = "raylib/raylib.pony"
+    let target_file_path' = "raylib/generated.pony"
     let target_file_path = FilePath(FileAuth(env.root), target_file_path')
     let c_file_path' = "src/shims.c"
     let c_file_path = FilePath(FileAuth(env.root), c_file_path')
@@ -100,6 +100,9 @@ class Generator
 
   fun ref gen_common() =>
     _file.write("""
+    use "path:../zig-out/lib"
+    use "lib:raylibc"
+    use "lib:shims"
     use "collections"
     """)
     _cfile.write("""
