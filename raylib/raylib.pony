@@ -679,6 +679,8 @@ type NPatchLayout is
   | NPatchThreePatchHorizontal
 )
 
+primitive RAudioBuffer
+primitive RAudioProcessor
 
 struct Vector2
   let x: F32
@@ -843,10 +845,10 @@ struct Font
   let glyph_count: I32
   let glyph_padding: I32
   let texture: Texture2D
-  let recs: Array[Rectangle]
-  let glyphs: Array[GlyphInfo]
+  let recs: Pointer[Rectangle]
+  let glyphs: Pointer[GlyphInfo]
 
-  new create(base_size': I32, glyph_count': I32, glyph_padding': I32, texture': Texture2D, recs': Array[Rectangle], glyphs': Array[GlyphInfo]) =>
+  new create(base_size': I32, glyph_count': I32, glyph_padding': I32, texture': Texture2D, recs': Pointer[Rectangle], glyphs': Pointer[GlyphInfo]) =>
     base_size = base_size'
     glyph_count = glyph_count'
     glyph_padding = glyph_padding'
@@ -883,21 +885,21 @@ struct Camera2D
 struct Mesh
   let vertex_count: I32
   let triangle_count: I32
-  let vertices: Array[F32]
-  let texcoords: Array[F32]
-  let texcoords2: Array[F32]
-  let normals: Array[F32]
-  let tangents: Array[F32]
+  let vertices: Pointer[F32]
+  let texcoords: Pointer[F32]
+  let texcoords2: Pointer[F32]
+  let normals: Pointer[F32]
+  let tangents: Pointer[F32]
   let colors: String
-  let indices: Array[unsignedshort]
-  let anim_vertices: Array[F32]
-  let anim_normals: Array[F32]
+  let indices: Pointer[U16]
+  let anim_vertices: Pointer[F32]
+  let anim_normals: Pointer[F32]
   let bone_ids: String
-  let bone_weights: Array[F32]
+  let bone_weights: Pointer[F32]
   let vao_id: U32
-  let vbo_id: Array[unsignedint]
+  let vbo_id: Pointer[U32]
 
-  new create(vertex_count': I32, triangle_count': I32, vertices': Array[F32], texcoords': Array[F32], texcoords2': Array[F32], normals': Array[F32], tangents': Array[F32], colors': String, indices': Array[unsignedshort], anim_vertices': Array[F32], anim_normals': Array[F32], bone_ids': String, bone_weights': Array[F32], vao_id': U32, vbo_id': Array[unsignedint]) =>
+  new create(vertex_count': I32, triangle_count': I32, vertices': Pointer[F32], texcoords': Pointer[F32], texcoords2': Pointer[F32], normals': Pointer[F32], tangents': Pointer[F32], colors': String, indices': Pointer[U16], anim_vertices': Pointer[F32], anim_normals': Pointer[F32], bone_ids': String, bone_weights': Pointer[F32], vao_id': U32, vbo_id': Pointer[U32]) =>
     vertex_count = vertex_count'
     triangle_count = triangle_count'
     vertices = vertices'
@@ -916,9 +918,9 @@ struct Mesh
 
 struct Shader
   let id: U32
-  let locs: Array[I32]
+  let locs: Pointer[I32]
 
-  new create(id': U32, locs': Array[I32]) =>
+  new create(id': U32, locs': Pointer[I32]) =>
     id = id'
     locs = locs'
 
@@ -934,10 +936,10 @@ struct MaterialMap
 
 struct Material
   let shader: Shader
-  let maps: Array[MaterialMap]
-  let params: Array[F32]
+  let maps: Pointer[MaterialMap]
+  let params: Pointer[F32]
 
-  new create(shader': Shader, maps': Array[MaterialMap], params': Array[F32]) =>
+  new create(shader': Shader, maps': Pointer[MaterialMap], params': Pointer[F32]) =>
     shader = shader'
     maps = maps'
     params = params'
@@ -953,10 +955,10 @@ struct Transform
     scale = scale'
 
 struct BoneInfo
-  let name: Array[U8]
+  let name: Pointer[U8]
   let parent: I32
 
-  new create(name': Array[U8], parent': I32) =>
+  new create(name': Pointer[U8], parent': I32) =>
     name = name'
     parent = parent'
 
@@ -964,14 +966,14 @@ struct Model
   let transform: Matrix
   let mesh_count: I32
   let material_count: I32
-  let meshes: Array[Mesh]
-  let materials: Array[Material]
-  let mesh_material: Array[I32]
+  let meshes: Pointer[Mesh]
+  let materials: Pointer[Material]
+  let mesh_material: Pointer[I32]
   let bone_count: I32
-  let bones: Array[BoneInfo]
-  let bind_pose: Array[Transform]
+  let bones: Pointer[BoneInfo]
+  let bind_pose: Pointer[Transform]
 
-  new create(transform': Matrix, mesh_count': I32, material_count': I32, meshes': Array[Mesh], materials': Array[Material], mesh_material': Array[I32], bone_count': I32, bones': Array[BoneInfo], bind_pose': Array[Transform]) =>
+  new create(transform': Matrix, mesh_count': I32, material_count': I32, meshes': Pointer[Mesh], materials': Pointer[Material], mesh_material': Pointer[I32], bone_count': I32, bones': Pointer[BoneInfo], bind_pose': Pointer[Transform]) =>
     transform = transform'
     mesh_count = mesh_count'
     material_count = material_count'
@@ -985,11 +987,11 @@ struct Model
 struct ModelAnimation
   let bone_count: I32
   let frame_count: I32
-  let bones: Array[BoneInfo]
-  let frame_poses: Array[Array[Transform]]
-  let name: Array[U8]
+  let bones: Pointer[BoneInfo]
+  let frame_poses: Pointer[Pointer[Transform]]
+  let name: Pointer[U8]
 
-  new create(bone_count': I32, frame_count': I32, bones': Array[BoneInfo], frame_poses': Array[Array[Transform]], name': Array[U8]) =>
+  new create(bone_count': I32, frame_count': I32, bones': Pointer[BoneInfo], frame_poses': Pointer[Pointer[Transform]], name': Pointer[U8]) =>
     bone_count = bone_count'
     frame_count = frame_count'
     bones = bones'
@@ -1039,13 +1041,13 @@ struct Wave
     data = data'
 
 struct AudioStream
-  let buffer: Array[rAudioBuffer]
-  let processor: Array[rAudioProcessor]
+  let buffer: Pointer[RAudioBuffer]
+  let processor: Pointer[RAudioProcessor]
   let sample_rate: U32
   let sample_size: U32
   let channels: U32
 
-  new create(buffer': Array[rAudioBuffer], processor': Array[rAudioProcessor], sample_rate': U32, sample_size': U32, channels': U32) =>
+  new create(buffer': Pointer[RAudioBuffer], processor': Pointer[RAudioProcessor], sample_rate': U32, sample_size': U32, channels': U32) =>
     buffer = buffer'
     processor = processor'
     sample_rate = sample_rate'
@@ -1083,10 +1085,10 @@ struct VrDeviceInfo
   let eye_to_screen_distance: F32
   let lens_separation_distance: F32
   let interpupillary_distance: F32
-  let lens_distortion_values: Array[F32]
-  let chroma_ab_correction: Array[F32]
+  let lens_distortion_values: Pointer[F32]
+  let chroma_ab_correction: Pointer[F32]
 
-  new create(h_resolution': I32, v_resolution': I32, h_screen_size': F32, v_screen_size': F32, v_screen_center': F32, eye_to_screen_distance': F32, lens_separation_distance': F32, interpupillary_distance': F32, lens_distortion_values': Array[F32], chroma_ab_correction': Array[F32]) =>
+  new create(h_resolution': I32, v_resolution': I32, h_screen_size': F32, v_screen_size': F32, v_screen_center': F32, eye_to_screen_distance': F32, lens_separation_distance': F32, interpupillary_distance': F32, lens_distortion_values': Pointer[F32], chroma_ab_correction': Pointer[F32]) =>
     h_resolution = h_resolution'
     v_resolution = v_resolution'
     h_screen_size = h_screen_size'
@@ -1099,16 +1101,16 @@ struct VrDeviceInfo
     chroma_ab_correction = chroma_ab_correction'
 
 struct VrStereoConfig
-  let projection: Array[Matrix]
-  let view_offset: Array[Matrix]
-  let left_lens_center: Array[F32]
-  let right_lens_center: Array[F32]
-  let left_screen_center: Array[F32]
-  let right_screen_center: Array[F32]
-  let scale: Array[F32]
-  let scale_in: Array[F32]
+  let projection: Pointer[Matrix]
+  let view_offset: Pointer[Matrix]
+  let left_lens_center: Pointer[F32]
+  let right_lens_center: Pointer[F32]
+  let left_screen_center: Pointer[F32]
+  let right_screen_center: Pointer[F32]
+  let scale: Pointer[F32]
+  let scale_in: Pointer[F32]
 
-  new create(projection': Array[Matrix], view_offset': Array[Matrix], left_lens_center': Array[F32], right_lens_center': Array[F32], left_screen_center': Array[F32], right_screen_center': Array[F32], scale': Array[F32], scale_in': Array[F32]) =>
+  new create(projection': Pointer[Matrix], view_offset': Pointer[Matrix], left_lens_center': Pointer[F32], right_lens_center': Pointer[F32], left_screen_center': Pointer[F32], right_screen_center': Pointer[F32], scale': Pointer[F32], scale_in': Pointer[F32]) =>
     projection = projection'
     view_offset = view_offset'
     left_lens_center = left_lens_center'
@@ -1121,9 +1123,9 @@ struct VrStereoConfig
 struct FilePathList
   let capacity: U32
   let count: U32
-  let paths: Array[Array[U8]]
+  let paths: Pointer[Pointer[U8]]
 
-  new create(capacity': U32, count': U32, paths': Array[Array[U8]]) =>
+  new create(capacity': U32, count': U32, paths': Pointer[Pointer[U8]]) =>
     capacity = capacity'
     count = count'
     paths = paths'
@@ -1131,9 +1133,9 @@ struct FilePathList
 struct AutomationEvent
   let frame: U32
   let typ: U32
-  let params: Array[I32]
+  let params: Pointer[I32]
 
-  new create(frame': U32, typ': U32, params': Array[I32]) =>
+  new create(frame': U32, typ': U32, params': Pointer[I32]) =>
     frame = frame'
     typ = typ'
     params = params'
@@ -1141,9 +1143,9 @@ struct AutomationEvent
 struct AutomationEventList
   let capacity: U32
   let count: U32
-  let events: Array[AutomationEvent]
+  let events: Pointer[AutomationEvent]
 
-  new create(capacity': U32, count': U32, events': Array[AutomationEvent]) =>
+  new create(capacity': U32, count': U32, events': Pointer[AutomationEvent]) =>
     capacity = capacity'
     count = count'
     events = events'

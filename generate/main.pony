@@ -104,6 +104,7 @@ class Generator
 
   fun ref gen_structs() ? =>
     let gen = StructGenerator(_file, _cfile)
+    gen.generate_type_stubs()
     let structs = _json.data("structs")? as JsonArray
     for struct' in structs.data.values() do
       let str = struct' as JsonObject
@@ -197,14 +198,19 @@ class StructGenerator
     end
     _file.flush()
 
+  fun ref generate_type_stubs() =>
+    _file.write("""
+    primitive RAudioBuffer
+    primitive RAudioProcessor
+    """)
+
 class AliasGenerator
   let _file: File
 
   new create(file: File) => _file = file
 
   fun ref generate(alias_name: String, alias_type: String) =>
-    _file.queue("\ntype " + alias_name + " is " + alias_type)
-    _file.flush()
+    _file.write("\ntype " + alias_name + " is " + alias_type)
 
 primitive ASCII
   fun upper(c: U8): U8 =>
@@ -265,13 +271,13 @@ primitive Types
           Debug("parts size is less than two for '" + s + "'")
           error
         end
-        let typ' = String.join(parts.slice(0, parts.size() - 1).values())
+        let typ' = " ".join(parts.slice(0, parts.size() - 1).values())
         let typ: String val = consume typ'
         let stars = parts(parts.size() - 1)?
         // Debug("s: '" + s + "', typ: '" + typ + "', stars: '" + stars + "'")
         match stars
-        | "*" => "Array[" + c_to_pony(typ)? + "]"
-        | "**" => "Array[Array[" + c_to_pony(typ)? + "]]"
+        | "*" => "Pointer[" + c_to_pony(typ)? + "]"
+        | "**" => "Pointer[Pointer[" + c_to_pony(typ)? + "]]"
         else
           Debug("Ends with star but is '" + s + "'")
           error
@@ -289,7 +295,7 @@ primitive Types
             Debug("Failed to read a number: '" + array_part + "'")
             error
           end
-        "Array[" + c_to_pony(base_type)? + "]"
+        "Pointer[" + c_to_pony(base_type)? + "]"
       else
         s
       end
@@ -305,6 +311,9 @@ primitive Types
     | "unsigned char *" => "String"
     | "bool" => "Bool"
     | "char" => "U8"
+    | "unsigned short" => "U16"
+    | "rAudioBuffer" => "RAudioBuffer"
+    | "rAudioProcessor" => "RAudioProcessor"
     else
       // Debug("Not hardcoded type '" + s + "'")
       error
