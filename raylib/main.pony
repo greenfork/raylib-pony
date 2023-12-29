@@ -2,44 +2,46 @@ use "path:../zig-out/lib"
 use "lib:raylibc"
 use "lib:shims"
 
-// use @InitWindow[None](w: I32, h: I32, title: Pointer[U8] tag)
-// use @CloseWindow[None]()
-// use @SetTargetFPS[None](fps: I32)
-// use @BeginDrawing[None]()
-// use @EndDrawing[None]()
-// use @ClearBackground[None](color: CColor)
-// use @DrawText[None](text: Pointer[U8] tag, posx: I32, posy: I32, font_size: I32, color: CColor)
-// use @WindowShouldClose[Bool]()
+class Window
+  new create(width: I32, height: I32, title: String) =>
+    @InitWindow(width, height, title.cstring())
 
-// use @deref_color[_Color](ptr: Color)
+  fun ref dispose() => close()
 
-// primitive _Color
+  fun ref set_target_fps(fps: I32) => @SetTargetFPS(fps)
 
-struct val ColorR
-  let r: U8
-  let g: U8
-  let b: U8
-  let a: U8
+  fun should_close(): Bool => @WindowShouldClose()
 
-  new val create(r': U8, g': U8, b': U8, a': U8) =>
-    r = r'
-    g = g'
-    b = b'
-    a = a'
+  fun ref begin_drawing(): DrawingContext => DrawingContext
+
+  fun ref close() => @CloseWindow()
+
+class DrawingContext
+  new create() => @BeginDrawing()
+
+  fun ref dispose() => end_drawing()
+
+  fun ref clear_background(c: Color) => @ClearBackground(@deref_color(c))
+
+  fun ref end_drawing() => @EndDrawing()
+
+  fun ref draw_text(text: String, pos_x: I32, pos_y: I32, font_size: I32,
+    color: Color)
+  =>
+    @DrawText(text.cstring(), pos_x, pos_y, font_size, @deref_color(color))
 
 actor Main
   new create(env: Env) =>
-    let green = Color(0xaf, 0xaf, 0xaf, 0xff)
     let black = Color(0, 0, 0, 0xff)
     let white = Color(0xff, 0xff, 0xff, 0xff)
 
-    @InitWindow(800, 450, "raylib [core]".cstring())
-    @SetTargetFPS(60)
-    while not @WindowShouldClose() do
-      @BeginDrawing()
-      @ClearBackground(@deref_color(green))
-      @DrawText("Congrats! You created your first window!".cstring(), 190, 200,
-        20, @deref_color(black))
-      @EndDrawing()
+    with window = Window(800, 450, "raylib [core]") do
+      window.set_target_fps(60)
+      while not window.should_close() do
+        with dc = window.begin_drawing() do
+          dc.clear_background(white)
+          dc.draw_text("Congrats! You created your first window!",
+            190, 200, 20, black)
+        end
+      end
     end
-    @CloseWindow()

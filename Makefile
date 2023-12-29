@@ -1,3 +1,5 @@
+default: example
+
 generate:
 	corral run -- ponyc -d -o build generate/
 	rm -f raylib/raylib.pony src/shims.c
@@ -14,4 +16,4 @@ build: zig-build
 zig-build:
 	zig build
 
-.PHONY: build example zig-build generate
+.PHONY: default build example zig-build generate
