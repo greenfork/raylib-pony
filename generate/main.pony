@@ -37,9 +37,16 @@ actor Main
         env.err.print("Unable to initialize the generator")
         return
       end
+    let struct_names =
+      try
+        generator.list_struct_names()?
+      else
+        env.err.print("Unable to list struct names")
+        return
+      end
     generator.gen_common()
     try
-      generator.gen_functions()?
+      generator.gen_functions(struct_names)?
     else
       env.err.print("Unable to generate functions")
       return
@@ -82,7 +89,7 @@ class Generator
     use "collections"
     """)
 
-  fun ref gen_functions() ? =>
+  fun ref gen_functions(struct_names: Set[String]) ? =>
     // void*
     // deref_color(void** ptr) {
     // 	return *ptr;
@@ -103,7 +110,8 @@ class Generator
       for param' in params'.values() do
         let param = param' as JsonObject
         let param_name = param.data("name")? as String
-        let param_type = param.data("type")? as String
+        let param_type' = param.data("type")? as String
+        let param_type = Types.add_underscore(param_type', struct_names)
         params.push((Idents.whitelist(param_name), Types.c_to_pony(param_type)?))
       end
       gen.generate(name, Types.c_to_pony(return_type)?, params)
@@ -155,6 +163,15 @@ class Generator
       let typ = alias.data("type")? as String
       gen.generate(name, typ)
     end
+
+  fun ref list_struct_names(): Set[String] ? =>
+    let names = Set[String]
+    let structs = _json.data("structs")? as JsonArray
+    for struct' in structs.data.values() do
+      let str = struct' as JsonObject
+      names.set(str.data("name")? as String)
+    end
+    names
 
 type EnumValues is Array[(String val, I64)]
 type FieldValues is Array[(String val, String val)]
@@ -230,7 +247,8 @@ class StructGenerator
     _cfile = cfile
 
   fun ref generate(struct_name: String val, fields: FieldValues) =>
-    _file.queue("\nstruct " + struct_name + "\n")
+    _file.queue("\nprimitive _" + struct_name + "\n")
+    _file.queue("struct " + struct_name + "\n")
     for (name, typ) in fields.values() do
       _file.queue("  let " + name + ": " + typ + "\n")
     end
@@ -387,6 +405,9 @@ primitive Types
       // Debug("Not hardcoded type '" + s + "'")
       error
     end
+
+  fun add_underscore(s: String val, set: Set[String]): String val =>
+    if set.contains(s) then "_" + s else s end
 
 primitive Stringx
   fun ends_with(s: String box, c: U8): Bool =>

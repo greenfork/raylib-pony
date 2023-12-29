@@ -13,7 +13,7 @@ use "lib:shims"
 
 use @deref_color[_Color](ptr: Color)
 
-primitive _Color
+// primitive _Color
 
 struct val ColorR
   let r: U8
