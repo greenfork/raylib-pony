@@ -16,5 +16,6 @@
 $ git clone --recurse-submodules https://github.com/greenfork/raylib-pony.git
 $ cd raylib-pony
 $ corral fetch
-$ make example
+$ make
+# Press Esc to exit the window
 ```
