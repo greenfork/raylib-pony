@@ -1,8 +1,8 @@
-use "../../raylib"
+use "../../../raylib"
 
 actor Main
   new create(env: Env) =>
-    with window = Window(800, 450, "raylib [core]") do
+    with window = Window(800, 450, "raylib [core] Basic window") do
       window.set_target_fps(60)
       let game = Game(window)
       game()

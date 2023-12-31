@@ -37,16 +37,9 @@ actor Main
         env.err.print("Unable to initialize the generator")
         return
       end
-    let struct_names =
-      try
-        generator.list_struct_names()?
-      else
-        env.err.print("Unable to list struct names")
-        return
-      end
     let function_generator =
       try
-        generator.gen_functions(struct_names)?
+        generator.gen_functions()?
       else
         env.err.print("Unable to initialize function generator")
         return
@@ -96,12 +89,25 @@ class Generator
   let _json: JsonObject
   let _file: File
   let _cfile: File
+  let _struct_names: Set[String] = Set[String]
 
   new create(api: JsonDoc, target_file_path: FilePath,
     c_file_path: FilePath) ?
   =>
     _json = api.data as JsonObject
     _file = File(target_file_path)
+
+    let structs = _json.data("structs")? as JsonArray
+    for struct' in structs.data.values() do
+      let str = struct' as JsonObject
+      _struct_names.set(str.data("name")? as String)
+    end
+    let aliases = _json.data("aliases")? as JsonArray
+    for alias' in aliases.data.values() do
+      let alias = alias' as JsonObject
+      _struct_names.set(alias.data("name")? as String)
+    end
+
     if not (_file.errno() is FileOK) then error end
     _cfile = File(c_file_path)
     if not (_cfile.errno() is FileOK) then _file.dispose(); error end
@@ -112,18 +118,23 @@ class Generator
     use "lib:raylibc"
     use "lib:shims"
     use "collections"
+
     """)
     _cfile.write("""
     #include <raylib.h>
+    #include <stdlib.h>
+
     """)
 
-  fun ref gen_functions(struct_names: Set[String]): FunctionGenerator ? =>
+  fun ref gen_functions(): FunctionGenerator ? =>
     let gen = FunctionGenerator(_file)
     let functions = _json.data("functions")? as JsonArray
     for function' in functions.data.values() do
       let function = function' as JsonObject
       let name = function.data("name")? as String
-      let return_type = Types.c_to_pony(function.data("returnType")? as String)?
+      let return_type = Types.add_underscore(
+        Types.c_to_pony(function.data("returnType")? as String, _struct_names)?,
+        _struct_names)
       let params' =
         try
           (function.data("params")? as JsonArray).data
@@ -135,9 +146,14 @@ class Generator
         let param = param' as JsonObject
         let param_name = param.data("name")? as String
         let param_type' = param.data("type")? as String
-        let param_type = Types.add_underscore(param_type', struct_names)
+        let param_type = Types.add_underscore(param_type', _struct_names)
+        let is_array: Bool =
+          (param_name == "points") or
+          (param_name == "animations") or
+          (param_name == "glyphRecs")
         params.push(
-          (Idents.whitelist(param_name), Types.c_to_pony(param_type)?))
+          (Idents.whitelist(param_name),
+           Types.c_to_pony(param_type, _struct_names, is_array)?))
       end
       gen.add((name, return_type, params))
     end
@@ -174,7 +190,9 @@ class Generator
         let field = field' as JsonObject
         let field_name = Idents.whitelist(field.data("name")? as String)
         let c_field_type = field.data("type")? as String
-        let pony_field_type = Types.c_to_pony(c_field_type)?
+        // We don't supply here _struct_names because there are too many
+        // ambiguities regarding pointer vs array type.
+        let pony_field_type = Types.c_to_pony(c_field_type, Set[String])?
         fields.push((Idents.camel_to_snake(field_name), pony_field_type))
       end
       gen.add((name, fields))
@@ -203,15 +221,6 @@ class Generator
       gen.add((name, value))
     end
     gen
-
-  fun ref list_struct_names(): Set[String] ? =>
-    let names = Set[String]
-    let structs = _json.data("structs")? as JsonArray
-    for struct' in structs.data.values() do
-      let str = struct' as JsonObject
-      names.set(str.data("name")? as String)
-    end
-    names
 
 type FunctionParam is (String val, String val)
 type FunctionDesc is (String val, String val, Array[FunctionParam])
@@ -291,27 +300,52 @@ class StructGenerator
   let _file: File
   let _cfile: File
   let _structs: Array[StructDesc] = Array[StructDesc]
+  let _skip_statement_generation: Set[String] = Set[String]
 
   new create(file: File, cfile: File) =>
     _file = file
     _cfile = cfile
+    _skip_statement_generation.set("Shader")
+    _skip_statement_generation.set("Camera2D")
+    _skip_statement_generation.set("Camera3D")
 
   fun ref add(desc: StructDesc) => _structs.push(desc)
 
   fun ref generate_c() =>
     for (name, _) in _structs.values() do
-      _cfile.write(name + " deref_" + Idents.camel_to_snake(name) +
-        "(" + name + "* ptr) { return *ptr; };\n")
+      let camel_name = Idents.camel_to_snake(name)
+      // Shader* alloc_shader(Shader value) {
+      // 	Shader* ptr = (Shader*) malloc(sizeof(Shader));
+      // 	*ptr = value;
+      // 	return ptr;
+      // }
+      _cfile.queue(name + "* alloc_" + camel_name + "(" + name + " value) {\n" +
+        "  " + name + "* ptr = (" + name + "*) malloc(sizeof(" + name + "));\n" +
+        "  *ptr = value;\n" +
+        "  return ptr;\n}\n")
+      // void free_shader(Shader* ptr) { free(ptr); }
+      _cfile.queue("void free_" + camel_name + "(" + name + "* ptr) { free(ptr); }\n")
+      // Shader deref_shader(Shader* ptr) { return *ptr; }
+      _cfile.queue(name + " deref_" + camel_name + "(" + name + "* ptr) { return *ptr; }\n")
+      _cfile.flush()
     end
 
   fun ref generate_use_statements() =>
     for (name, _) in _structs.values() do
-      _file.write("\nuse @deref_" + Idents.camel_to_snake(name) +
-        "[_" + name + "](ptr: " + name + ")")
+      let camel_name = Idents.camel_to_snake(name)
+      // use @deref_shader[_Shader](ptr: Shader)
+      _file.queue("use @deref_" + camel_name + "[_" + name + "](ptr: " + name + ")\n")
+      // use @alloc_shader[Shader](value: _Shader)
+      _file.queue("use @alloc_" + camel_name + "[" + name + "](value: _" + name + ")\n")
+      // use @free_shader[None](ptr: Shader)
+      _file.queue("use @free_" + camel_name + "[None](ptr: " + name + ")\n")
+      _file.flush()
     end
 
   fun ref generate_statements() =>
     for (struct_name, fields) in _structs.values() do
+      if _skip_statement_generation.contains(struct_name) then continue end
+
       _file.queue("primitive _" + struct_name + "\n")
       _file.queue("struct " + struct_name + "\n")
       for (name, typ) in fields.values() do
@@ -358,7 +392,9 @@ class AliasGenerator
 
   fun ref generate_statements() =>
     for (name, type') in _aliases.values() do
-      _file.write("\ntype " + name + " is " + type')
+      _file.queue("\ntype " + name + " is " + type')
+      _file.queue("\ntype _" + name + " is _" + type')
+      _file.flush()
     end
 
 type ColorDesc is (String val, String val)
@@ -444,7 +480,9 @@ primitive Idents
     end
 
 primitive Types
-  fun c_to_pony(s: String val): String val ? =>
+  fun c_to_pony(s: String val, struct_names: Set[String], is_array: Bool = false
+    ): String val ?
+  =>
     try
       Types._c_to_pony_hardcoded(s)?
     else
@@ -452,7 +490,7 @@ primitive Types
         // "const ".size() == 6
         // c_to_pony(s.trim(6))? + " val"
         // TODO: do something with const
-        c_to_pony(s.trim(6))?
+        c_to_pony(s.trim(6), struct_names)?
       elseif Stringx.ends_with(s, '*') then
         // BoneInfo *
         let parts = recover ref s.split(" ") end
@@ -463,10 +501,23 @@ primitive Types
         let typ' = " ".join(parts.slice(0, parts.size() - 1).values())
         let typ: String val = consume typ'
         let stars = parts(parts.size() - 1)?
-        // Debug("s: '" + s + "', typ: '" + typ + "', stars: '" + stars + "'")
+        let inner_type = c_to_pony(typ, struct_names)?
+        // Debug("s: '" + s + "', typ: '" + typ + "', stars: '" + stars + "', " +
+        //   "inner_type: '" + inner_type + "', struct_names contains: " +
+        //   struct_names.contains(inner_type).string())
         match stars
-        | "*" => "Pointer[" + c_to_pony(typ)? + "] tag"
-        | "**" => "Pointer[Pointer[" + c_to_pony(typ)? + "] tag] tag"
+        | "*" =>
+          if struct_names.contains(inner_type) and (not is_array) then
+            inner_type
+          else
+            "Pointer[" + inner_type + "] tag"
+          end
+        | "**" =>
+          if struct_names.contains(inner_type) and (not is_array) then
+            "Pointer[" + inner_type + "] tag"
+          else
+            "Pointer[Pointer[" + inner_type + "] tag] tag"
+          end
         else
           Debug("Ends with star but is '" + s + "'")
           error
@@ -484,7 +535,7 @@ primitive Types
             Debug("Failed to read a number: '" + array_part + "'")
             error
           end
-        "Pointer[" + c_to_pony(base_type)? + "] tag"
+        "Pointer[" + c_to_pony(base_type, struct_names)? + "] tag"
       else
         s
       end

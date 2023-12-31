@@ -1,14 +1,19 @@
-default: example
+default: example_shaders_raymarching
 
 generate:
 	corral run -- ponyc -d -o build generate/
-	rm -f raylib/raylib.pony src/shims.c
+	rm raylib/generated.pony src/shims.c
 	./build/generate
 	cat raylib/generated.pony
-	# cat src/shims.c
+	cat src/shims.c
 
-example: build
-	./build/basic_window
+example_core_basic_window: zig-build
+	ponyc -d -o build examples/core/core_basic_window
+	./build/core_basic_window
+
+example_shaders_raymarching: zig-build
+	ponyc -d -o build examples/shaders/shaders_raymarching
+	./build/shaders_raymarching
 
 build: zig-build
 	ponyc -d -o build examples/basic_window
