@@ -75,7 +75,6 @@ actor Main
 
     generator.gen_common()
     function_generator.generate_use_statements()
-    struct_generator.generate_use_statements()
 
     enum_generator.generate()
     struct_generator.generate_statements()
@@ -83,19 +82,25 @@ actor Main
     alias_generator.generate_statements()
     color_generator.generate_statements()
 
-    struct_generator.generate_c()
+    function_generator.generate_c()
 
 class Generator
   let _json: JsonObject
   let _file: File
   let _cfile: File
   let _struct_names: Set[String] = Set[String]
+  // Parameter names that tell us the value is an array and not a pointer.
+  let _array_parameter_names: Set[String] = Set[String]
 
   new create(api: JsonDoc, target_file_path: FilePath,
     c_file_path: FilePath) ?
   =>
     _json = api.data as JsonObject
     _file = File(target_file_path)
+    _array_parameter_names.set("points")
+    _array_parameter_names.set("animations")
+    _array_parameter_names.set("glyphRecs")
+    _array_parameter_names.set("images")
 
     let structs = _json.data("structs")? as JsonArray
     for struct' in structs.data.values() do
@@ -123,18 +128,18 @@ class Generator
     _cfile.write("""
     #include <raylib.h>
     #include <stdlib.h>
+    #include <pony.h>
 
     """)
 
   fun ref gen_functions(): FunctionGenerator ? =>
-    let gen = FunctionGenerator(_file)
+    let gen = FunctionGenerator(_file, _cfile, _struct_names)
     let functions = _json.data("functions")? as JsonArray
     for function' in functions.data.values() do
       let function = function' as JsonObject
       let name = function.data("name")? as String
-      let return_type = Types.add_underscore(
-        Types.c_to_pony(function.data("returnType")? as String, _struct_names)?,
-        _struct_names)
+      let c_return_type = function.data("returnType")? as String
+      let return_type = Types.c_to_pony(c_return_type, _struct_names)?
       let params' =
         try
           (function.data("params")? as JsonArray).data
@@ -145,17 +150,13 @@ class Generator
       for param' in params'.values() do
         let param = param' as JsonObject
         let param_name = param.data("name")? as String
-        let param_type' = param.data("type")? as String
-        let param_type = Types.add_underscore(param_type', _struct_names)
-        let is_array: Bool =
-          (param_name == "points") or
-          (param_name == "animations") or
-          (param_name == "glyphRecs")
+        let c_param_type = param.data("type")? as String
+        let param_type = Types.c_to_pony(c_param_type, _struct_names,
+          _array_parameter_names.contains(param_name))?
         params.push(
-          (Idents.whitelist(param_name),
-           Types.c_to_pony(param_type, _struct_names, is_array)?))
+          (Idents.whitelist(param_name), param_name, param_type, c_param_type))
       end
-      gen.add((name, return_type, params))
+      gen.add((name, return_type, c_return_type, params))
     end
     gen
 
@@ -179,7 +180,7 @@ class Generator
     gen
 
   fun ref gen_structs(): StructGenerator ? =>
-    let gen = StructGenerator(_file, _cfile)
+    let gen = StructGenerator(_file)
     let structs = _json.data("structs")? as JsonArray
     for struct' in structs.data.values() do
       let str = struct' as JsonObject
@@ -222,34 +223,154 @@ class Generator
     end
     gen
 
-type FunctionParam is (String val, String val)
-type FunctionDesc is (String val, String val, Array[FunctionParam])
+// name, c_name, type, c_type
+type FunctionParam is (String val, String val, String val, String val)
+// name, return_type, c_return_type, params
+type FunctionDesc is (String val, String val, String val, Array[FunctionParam])
 class FunctionGenerator
   let _file: File
+  let _cfile: File
   let _functions: Array[FunctionDesc] = Array[FunctionDesc]
+  let _struct_names: Set[String]
+  // Function names that have variadic arguments and hence should be skipped
+  // because it is not possible to pass variadic arguments to another function.
+  let _variadic_function_names: Set[String] = Set[String]
+  // Functions names that return an array pointer as their result.
+  let _array_returning_function_names: Set[String] = Set[String]
 
-  new create(file: File) => _file = file
+  new create(file: File, cfile: File, struct_names: Set[String]) =>
+    _file = file
+    _cfile = cfile
+    _struct_names = struct_names
+    _variadic_function_names.set("TraceLog")
+    _variadic_function_names.set("TextFormat")
+    _array_returning_function_names.set("LoadImageColors")
+    _array_returning_function_names.set("LoadImagePalette")
+    _array_returning_function_names.set("LoadMaterials")
+    _array_returning_function_names.set("LoadModelAnimations")
+    _array_returning_function_names.set("LoadFontData")
 
   fun ref add(desc: FunctionDesc) => _functions.push(desc)
 
   fun ref generate_use_statements() =>
-    for (name, return_type, params) in _functions.values() do
-      _file.queue("use @" + name + "[" + return_type + "](")
+    for (name, return_type, c_return_type, params) in _functions.values() do
+      let function_name =
+        if _variadic_function_names.contains(name) or
+           _array_returning_function_names.contains(name)
+        then
+          name
+        else
+          "Pony" + name
+        end
+      _file.queue("use @" + function_name + "[" + return_type + "](")
       var first_param = true
-      for (n, typ) in params.values() do
+      for (n, c_n, type', c_type) in params.values() do
         if first_param then
           first_param = false
         else
           _file.queue(", ")
         end
-        if typ == "..." then
+        if type' == "..." then
           _file.queue("...")
         else
-          _file.queue(n + ": " + typ)
+          _file.queue(n + ": " + type')
         end
       end
       _file.queue(")\n")
       _file.flush()
+    end
+
+  fun ref generate_c() =>
+    // Example names:
+    // - name :: LoadShader
+    // - return_type :: Shader
+    // - ptr_return_type :: Shader*
+    for (name, return_type, c_return_type, params) in _functions.values() do
+      if name == "UnloadAutomationEventList" then
+        // HACK: parsed api.json is not like in header. Fix in future
+        // versions when Raylib synchronizes raylib.h with api.json.
+        _cfile.write("""
+          void PonyUnloadAutomationEventList(AutomationEventList * list) {
+          	UnloadAutomationEventList(*list);
+          }
+        """)
+        continue
+      end
+
+
+      if _variadic_function_names.contains(name) or
+         _array_returning_function_names.contains(name)
+      then
+        continue
+      end
+
+      let ptr_return_type: String val =
+        Types.add_asterisk_after(c_return_type, _struct_names)
+      let return_name: String val = "result"
+      let ptr_return_name: String val = "result_ptr"
+
+      // First line: Pony function declaration
+      _cfile.queue(ptr_return_type + " Pony" + name + "(")
+      var first_param = true
+      for (n, c_n, type', c_type) in params.values() do
+        if first_param then
+          first_param = false
+        else
+          _cfile.queue(", ")
+        end
+        _cfile.queue(Types.add_asterisk_after(c_type, _struct_names)
+          + " " + c_n)
+      end
+
+      _cfile.queue(") {\n")
+
+      // Second line: Raylib function application
+      if c_return_type == "void" then
+        _cfile.queue("\t" + name + "(")
+      else
+        _cfile.queue("\t" + c_return_type + " " + return_name + " = " + name + "(")
+      end
+
+      first_param = true
+      for (n, c_n, type', c_type) in params.values() do
+        if first_param then
+          first_param = false
+        else
+          _cfile.queue(", ")
+        end
+        if Types.is_pointer(c_type) then
+          _cfile.queue(c_n)
+        else
+          _cfile.queue(Types.add_asterisk_before(c_n, type', _struct_names))
+        end
+      end
+      _cfile.queue(");\n")
+
+      // Next lines
+      if not (c_return_type == "void") then
+        if not _struct_names.contains(return_type) then
+          // int PonyGetShaderLocation(Shader *shader, const char *uniformName) {
+          // 	return GetShaderLocation(*shader, uniformName);
+          // }
+          _cfile.queue("\treturn " + return_name + ";\n")
+        else
+          // Shader* PonyLoadShader(const char* vsFileName, const char* fsFileName) {
+          // 	Shader shader = LoadShader(vsFileName, fsFileName);
+          // 	pony_ctx_t* ctx = pony_ctx();
+          // 	Shader* shader_ptr = (Shader*)pony_alloc(ctx, sizeof(Shader));
+          // 	*shader_ptr = shader;
+          // 	return shader_ptr;
+          // }
+          _cfile.queue("\tpony_ctx_t* ctx = pony_ctx();\n")
+          _cfile.queue("\t" + ptr_return_type + " " + ptr_return_name + " = (" +
+            ptr_return_type + ")pony_alloc(ctx, sizeof(" + return_type + "));\n")
+          _cfile.queue("\t*" +ptr_return_name + " = " + return_name + ";\n")
+          _cfile.queue("\treturn " + ptr_return_name + ";\n")
+        end
+      end
+
+      _cfile.queue("}\n")
+      _cfile.flush()
     end
 
 type EnumValue is (String val, I64)
@@ -298,55 +419,21 @@ type StructField is (String val, String val)
 type StructDesc is (String val, Array[StructField])
 class StructGenerator
   let _file: File
-  let _cfile: File
   let _structs: Array[StructDesc] = Array[StructDesc]
   let _skip_statement_generation: Set[String] = Set[String]
 
-  new create(file: File, cfile: File) =>
+  new create(file: File) =>
     _file = file
-    _cfile = cfile
     _skip_statement_generation.set("Shader")
     _skip_statement_generation.set("Camera2D")
     _skip_statement_generation.set("Camera3D")
 
   fun ref add(desc: StructDesc) => _structs.push(desc)
 
-  fun ref generate_c() =>
-    for (name, _) in _structs.values() do
-      let camel_name = Idents.camel_to_snake(name)
-      // Shader* alloc_shader(Shader value) {
-      // 	Shader* ptr = (Shader*) malloc(sizeof(Shader));
-      // 	*ptr = value;
-      // 	return ptr;
-      // }
-      _cfile.queue(name + "* alloc_" + camel_name + "(" + name + " value) {\n" +
-        "  " + name + "* ptr = (" + name + "*) malloc(sizeof(" + name + "));\n" +
-        "  *ptr = value;\n" +
-        "  return ptr;\n}\n")
-      // void free_shader(Shader* ptr) { free(ptr); }
-      _cfile.queue("void free_" + camel_name + "(" + name + "* ptr) { free(ptr); }\n")
-      // Shader deref_shader(Shader* ptr) { return *ptr; }
-      _cfile.queue(name + " deref_" + camel_name + "(" + name + "* ptr) { return *ptr; }\n")
-      _cfile.flush()
-    end
-
-  fun ref generate_use_statements() =>
-    for (name, _) in _structs.values() do
-      let camel_name = Idents.camel_to_snake(name)
-      // use @deref_shader[_Shader](ptr: Shader)
-      _file.queue("use @deref_" + camel_name + "[_" + name + "](ptr: " + name + ")\n")
-      // use @alloc_shader[Shader](value: _Shader)
-      _file.queue("use @alloc_" + camel_name + "[" + name + "](value: _" + name + ")\n")
-      // use @free_shader[None](ptr: Shader)
-      _file.queue("use @free_" + camel_name + "[None](ptr: " + name + ")\n")
-      _file.flush()
-    end
-
   fun ref generate_statements() =>
     for (struct_name, fields) in _structs.values() do
       if _skip_statement_generation.contains(struct_name) then continue end
 
-      _file.queue("primitive _" + struct_name + "\n")
       _file.queue("struct " + struct_name + "\n")
       for (name, typ) in fields.values() do
         _file.queue("  let " + name + ": " + typ + "\n")
@@ -393,7 +480,6 @@ class AliasGenerator
   fun ref generate_statements() =>
     for (name, type') in _aliases.values() do
       _file.queue("\ntype " + name + " is " + type')
-      _file.queue("\ntype _" + name + " is _" + type')
       _file.flush()
     end
 
@@ -541,6 +627,16 @@ primitive Types
       end
     end
 
+  fun add_asterisk_after(type': String, struct_names: Set[String]): String =>
+    if struct_names.contains(type') then type' + "*" else type' end
+
+  fun add_asterisk_before(name: String, type': String, struct_names: Set[String]
+    ): String
+  =>
+    if struct_names.contains(type') then "*" + name else name end
+
+  fun is_pointer(c_type: String): Bool => Stringx.ends_with(c_type, '*')
+
   fun _c_to_pony_hardcoded(s: String val): String val ? =>
     match s
     | "float" => "F32"
@@ -561,9 +657,6 @@ primitive Types
       // Debug("Not hardcoded type '" + s + "'")
       error
     end
-
-  fun add_underscore(s: String val, set: Set[String]): String val =>
-    if set.contains(s) then "_" + s else s end
 
 primitive Stringx
   fun ends_with(s: String box, c: U8): Bool =>

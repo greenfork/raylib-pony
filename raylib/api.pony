@@ -1,54 +1,49 @@
-use @erase_type[Pointer[None]](ptr: Any)
 use "debug"
-
-use @PonyLoadShader[Shader](vsFileName: Pointer[U8] tag, fsFileName: Pointer[U8] tag)
-use @PonyGetShaderLocation[I32](shader: Shader, uniformName: Pointer[U8] tag)
 
 class Window
   new create(width: I32, height: I32, title: String) =>
-    @InitWindow(width, height, title.cstring())
+    @PonyInitWindow(width, height, title.cstring())
 
   fun ref dispose() => close()
 
-  fun ref set_target_fps(fps: I32) => @SetTargetFPS(fps)
+  fun ref set_target_fps(fps: I32) => @PonySetTargetFPS(fps)
 
-  fun should_close(): Bool => @WindowShouldClose()
+  fun should_close(): Bool => @PonyWindowShouldClose()
 
   fun ref begin_drawing(): DrawingContext => DrawingContext
 
-  fun ref close() => @CloseWindow()
+  fun ref close() => @PonyCloseWindow()
 
-  fun ref disable_cursor() => @DisableCursor()
+  fun ref disable_cursor() => @PonyDisableCursor()
 
-  fun get_frame_time(): F32 => @GetFrameTime()
+  fun get_frame_time(): F32 => @PonyGetFrameTime()
 
-  fun is_resized(): Bool => @IsWindowResized()
+  fun is_resized(): Bool => @PonyIsWindowResized()
 
-  fun get_screen_width(): I32 => @GetScreenWidth()
+  fun get_screen_width(): I32 => @PonyGetScreenWidth()
 
-  fun get_screen_height(): I32 => @GetScreenHeight()
+  fun get_screen_height(): I32 => @PonyGetScreenHeight()
 
 class DrawingContext
-  new create() => @BeginDrawing()
+  new create() => @PonyBeginDrawing()
 
   fun ref dispose() => end_drawing()
 
-  fun ref clear_background(c: Color) => @ClearBackground(@deref_color(c))
+  fun ref clear_background(c: Color) => @PonyClearBackground(c)
 
-  fun ref end_drawing() => @EndDrawing()
+  fun ref end_drawing() => @PonyEndDrawing()
 
   fun ref draw_text(text: String, pos_x: I32, pos_y: I32, font_size: I32,
     color: Color)
   =>
-    @DrawText(text.cstring(), pos_x, pos_y, font_size, @deref_color(color))
+    @PonyDrawText(text.cstring(), pos_x, pos_y, font_size, color)
 
-  fun ref draw_fps(pos_x: I32, pos_y: I32) => @DrawFPS(pos_x, pos_y)
+  fun ref draw_fps(pos_x: I32, pos_y: I32) => @PonyDrawFPS(pos_x, pos_y)
 
 primitive Config
   fun set_flags(flags: ConfigFlags) =>
-    @SetConfigFlags(flags.value())
+    @PonySetConfigFlags(flags.value())
 
-primitive _Shader
 struct Shader
   let id: U32
   let locs: Pointer[I32] tag
@@ -78,7 +73,7 @@ struct Shader
     // let value' = value.clone()
     // use @SetShaderValue[None](shader: _Shader, locIndex: I32, value: Pointer[None] tag, uniformType: I32)
     // Debug("uniform vec 3: " + ShaderUniformVec3().string())
-    @SetShaderValue(@deref_shader(this), loc_index, value.cpointer(), ShaderUniformVec3())
+    @PonySetShaderValue(this, loc_index, value.cpointer(), ShaderUniformVec3())
 
   // fun ref set_value_vector3(loc_index: I32, value: Vector3) =>
   //   // var value' = (value.x, value.y, value.z)
@@ -100,7 +95,6 @@ struct Shader
   // =>
   //   var value' = (value._1, value._2)
 
-primitive _Camera3D
 struct Camera3D
   let position: Vector3
   let target: Vector3
@@ -115,9 +109,8 @@ struct Camera3D
     fovy = fovy'
     projection = projection'
 
-  fun ref update(camera_mode: CameraMode) => @UpdateCamera(this, camera_mode())
+  fun ref update(camera_mode: CameraMode) => @PonyUpdateCamera(this, camera_mode())
 
-primitive _Camera2D
 struct Camera2D
   let offset: Vector2
   let target: Vector2
