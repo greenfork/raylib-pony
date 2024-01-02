@@ -1,6 +1,9 @@
 use @erase_type[Pointer[None]](ptr: Any)
 use "debug"
 
+use @PonyLoadShader[Shader](vsFileName: Pointer[U8] tag, fsFileName: Pointer[U8] tag)
+use @PonyGetShaderLocation[I32](shader: Shader, uniformName: Pointer[U8] tag)
+
 class Window
   new create(width: I32, height: I32, title: String) =>
     @InitWindow(width, height, title.cstring())
@@ -51,16 +54,15 @@ struct Shader
   let locs: Pointer[I32] tag
 
   new load(vs_file_name: (String | None), fs_file_name: (String | None)) =>
-    let shader' = @LoadShader(_Pointers.string_or_null(vs_file_name),
+    let shader = @PonyLoadShader(_Pointers.string_or_null(vs_file_name),
       _Pointers.string_or_null(fs_file_name))
-    let shader: Shader = @alloc_shader(shader')
     id = shader.id
     locs = shader.locs
-    @free_shader(shader)
+    Debug("Initializing Shader ID [" + id.string() + "]")
 
   fun ref get_location(uniform_name: String): I32 =>
     Debug("Uniform_name: " + uniform_name)
-    @GetShaderLocation(@deref_shader(this), uniform_name.cstring())
+    @PonyGetShaderLocation(this, uniform_name.cstring())
 
   // fun ref set_value_f32(loc_index: I32, value: F32) =>
   //   var value' = value

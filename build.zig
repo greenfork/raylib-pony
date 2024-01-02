@@ -35,6 +35,7 @@ pub fn build(b: *std.Build) void {
         srcdir ++ "/src/shims.c",
     }, &[_][]const u8{"-std=c99"});
     lib.addSystemIncludePath(.{ .path = srcdir ++ "/raylib_src/src" });
+    lib.addSystemIncludePath(.{ .path = "/usr/local/include" });
 
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when

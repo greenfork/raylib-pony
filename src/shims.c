@@ -1,5 +1,17 @@
 #include <raylib.h>
 #include <stdlib.h>
+#include <pony.h>
+
+Shader* PonyLoadShader(const char* vsFileName, const char* fsFileName) {
+	Shader shader = LoadShader(vsFileName, fsFileName);
+	pony_ctx_t* ctx = pony_ctx();
+	Shader* shader_ptr = (Shader*)pony_alloc(ctx, sizeof(Shader));
+	*shader_ptr = shader;
+	return shader_ptr;
+}
+int PonyGetShaderLocation(Shader *shader, const char *uniformName) {
+	return GetShaderLocation(*shader, uniformName);
+}
 
 void* erase_type(void* ptr) { return ptr; }
 
