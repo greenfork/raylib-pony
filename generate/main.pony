@@ -120,7 +120,7 @@ class Generator
   fun ref gen_common() =>
     _file.write("""
     use "path:../zig-out/lib"
-    use "lib:raylibc"
+    use "lib:raylib"
     use "lib:shims"
     use "collections"
 
@@ -427,6 +427,9 @@ class StructGenerator
     _skip_statement_generation.set("Shader")
     _skip_statement_generation.set("Camera2D")
     _skip_statement_generation.set("Camera3D")
+    _skip_statement_generation.set("Vector2")
+    _skip_statement_generation.set("Vector3")
+    _skip_statement_generation.set("Vector4")
 
   fun ref add(desc: StructDesc) => _structs.push(desc)
 

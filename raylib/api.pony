@@ -38,88 +38,99 @@ class DrawingContext
   =>
     @PonyDrawText(text.cstring(), pos_x, pos_y, font_size, color)
 
-  fun ref draw_fps(pos_x: I32, pos_y: I32) => @PonyDrawFPS(pos_x, pos_y)
+  fun ref draw_fps(x: I32, y: I32) => @PonyDrawFPS(x, y)
+
+  fun ref draw_rectangle(x: I32, y: I32, width: I32, height: I32, color: Color)
+  =>
+    @PonyDrawRectangle(x, y, width, height, color)
 
 primitive Config
   fun set_flags(flags: ConfigFlags) =>
     @PonySetConfigFlags(flags.value())
 
+primitive LoadShader
+  fun apply(vs_file_name: (String | None), fs_file_name: (String | None)
+    ): Shader
+  =>
+    @PonyLoadShader(_Pointers.string_or_null(vs_file_name),
+      _Pointers.string_or_null(fs_file_name))
+
 struct Shader
   let id: U32
   let locs: Pointer[I32] tag
 
-  new load(vs_file_name: (String | None), fs_file_name: (String | None)) =>
-    let shader = @PonyLoadShader(_Pointers.string_or_null(vs_file_name),
-      _Pointers.string_or_null(fs_file_name))
-    id = shader.id
-    locs = shader.locs
-    Debug("Initializing Shader ID [" + id.string() + "]")
+  new create(id': U32, locs': Pointer[I32] tag) =>
+    id = id'
+    locs = locs'
 
   fun ref get_location(uniform_name: String): I32 =>
-    Debug("Uniform_name: " + uniform_name)
     @PonyGetShaderLocation(this, uniform_name.cstring())
 
-  // fun ref set_value_f32(loc_index: I32, value: F32) =>
-  //   var value' = value
-  //   @SetShaderValue(@deref_shader(this), loc_index, addressof value',
-  //     ShaderUniformFloat())
+  fun ref set_value(loc_index: I32,
+    value: (F32 | I32 | Array[F32] | Array[I32]))
+  =>
+    // TODO: also add SHADER_UNIFORM_SAMPLER2D type. I don't know how it is
+    // used currently.
+    match value
+    | let v: F32 =>
+      var v' = v
+      @PonySetShaderValue(this, loc_index, addressof v', ShaderUniformFloat())
+    | let v: I32 =>
+      var v' = v
+      @PonySetShaderValue(this, loc_index, addressof v', ShaderUniformInt())
+    | let v: Array[F32] if v.size() == 2 =>
+      @PonySetShaderValue(this, loc_index, v.cpointer(), ShaderUniformVec2())
+    | let v: Array[F32] if v.size() == 3 =>
+      @PonySetShaderValue(this, loc_index, v.cpointer(), ShaderUniformVec3())
+    | let v: Array[F32] if v.size() == 4 =>
+      @PonySetShaderValue(this, loc_index, v.cpointer(), ShaderUniformVec4())
+    | let v: Array[I32] if v.size() == 2 =>
+      @PonySetShaderValue(this, loc_index, v.cpointer(), ShaderUniformIvec2())
+    | let v: Array[I32] if v.size() == 3 =>
+      @PonySetShaderValue(this, loc_index, v.cpointer(), ShaderUniformIvec3())
+    | let v: Array[I32] if v.size() == 4 =>
+      @PonySetShaderValue(this, loc_index, v.cpointer(), ShaderUniformIvec4())
+    else
+      Debug("No type matched for set_value")
+    end
 
-  // fun ref set_value_vector2(loc_index: I32, value: Vector2) =>
-  //   var value' = (value.x, value.y)
-  //   @SetShaderValue(@deref_shader(this), loc_index, addressof value',
-  //     ShaderUniformVec2())
+  fun ref begin_shader_mode(): ShaderModeContext => ShaderModeContext(this)
 
-  fun ref set_value_vector3(loc_index: I32, value: Array[F32]) =>
-    // let value' = value.clone()
-    // use @SetShaderValue[None](shader: _Shader, locIndex: I32, value: Pointer[None] tag, uniformType: I32)
-    // Debug("uniform vec 3: " + ShaderUniformVec3().string())
-    @PonySetShaderValue(this, loc_index, value.cpointer(), ShaderUniformVec3())
+class ShaderModeContext
+  new create(shader: Shader) => @PonyBeginShaderMode(shader)
 
-  // fun ref set_value_vector3(loc_index: I32, value: Vector3) =>
-  //   // var value' = (value.x, value.y, value.z)
-  //   // var value' = value
-  //   var value': Array[F32] = [value.x; value.y; value.z]
-  //   @SetShaderValue(@deref_shader(this), loc_index, value'.cpointer(),
-  //     ShaderUniformVec3())
+  fun ref dispose() => end_shader_mode()
 
-  // fun ref set_value[A: (F32 | Vector2 | Vector3)](
-  //   loc_index: I32, value: A, uniform_type: ShaderUniformDataType)
-  // =>
-  //   var value' = value
-  //   @SetShaderValue(@deref_shader(this), loc_index, addressof value',
-  //     uniform_type())
-
-  // rlSetUniform also uses ShaderUniformDataType
-  // fun ref set_value2(loc_index: I32, value: Pointer[None] tag,
-  //   uniform_type: ShaderUniformDataType)
-  // =>
-  //   var value' = (value._1, value._2)
+  fun ref end_shader_mode() => @PonyEndShaderMode()
 
 struct Camera3D
-  let position: Vector3
-  let target: Vector3
-  let up: Vector3
+  embed position: Vector3
+  embed target: Vector3
+  embed up: Vector3
   let fovy: F32
   let projection: I32
 
-  new create(position': Vector3, target': Vector3, up': Vector3, fovy': F32, projection': I32) =>
-    position = position'
-    target = target'
-    up = up'
+  new create(position': Vector3, target': Vector3, up': Vector3, fovy': F32,
+    projection': I32)
+  =>
+    position = Vector3(position'.x, position'.y, position'.z)
+    target = Vector3(target'.x, target'.y, target'.z)
+    up = Vector3(up'.x, up'.y, up'.z)
     fovy = fovy'
     projection = projection'
 
-  fun ref update(camera_mode: CameraMode) => @PonyUpdateCamera(this, camera_mode())
+  fun ref update(camera_mode: CameraMode) =>
+    @PonyUpdateCamera(this, camera_mode())
 
 struct Camera2D
-  let offset: Vector2
-  let target: Vector2
+  embed offset: Vector2
+  embed target: Vector2
   let rotation: F32
   let zoom: F32
 
   new create(offset': Vector2, target': Vector2, rotation': F32, zoom': F32) =>
-    offset = offset'
-    target = target'
+    offset = Vector2(offset'.x, offset'.y)
+    target = Vector2(target'.x, target'.y)
     rotation = rotation'
     zoom = zoom'
 
@@ -129,3 +140,42 @@ primitive _Pointers
     | let s: String => s.cstring()
     | None => Pointer[U8]
     end
+
+struct Vector2
+  let x: F32
+  let y: F32
+
+  new create(x': F32, y': F32) =>
+    x = x'
+    y = y'
+
+struct Vector3
+  let x: F32
+  let y: F32
+  let z: F32
+
+  new create(x': F32, y': F32, z': F32) =>
+    x = x'
+    y = y'
+    z = z'
+
+  fun ref array(): Array[F32] =>
+    let result = Array[F32].init(0, 3)
+    try
+      result(0)? = x
+      result(1)? = y
+      result(2)? = z
+    end
+    result
+
+struct Vector4
+  let x: F32
+  let y: F32
+  let z: F32
+  let w: F32
+
+  new create(x': F32, y': F32, z': F32, w': F32) =>
+    x = x'
+    y = y'
+    z = z'
+    w = w'

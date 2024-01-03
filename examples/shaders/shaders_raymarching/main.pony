@@ -5,8 +5,9 @@ actor Main
   new create(env: Env) =>
     Config.set_flags(ConfigFlags.>set(FlagVsyncHint))
     with window = Window(800, 450, "raylib [shaders] Raymarching") do
+      window.disable_cursor()
       window.set_target_fps(60)
-      let shader = Shader.load(None,
+      let shader = LoadShader(None,
         "raylib_src/examples/shaders/resources/shaders/glsl330/raymarching.fs")
       let game = Game(window, shader)
       game()
@@ -35,50 +36,35 @@ class Game
     _view_center_loc = shader.get_location("viewCenter")
     _run_time_loc = shader.get_location("runTime")
     _resolution_loc = shader.get_location("resolution")
-    Debug("view_eye_loc: " + _view_eye_loc.string() + ", view_center_loc: " +
-      _view_center_loc.string() + ", run_time_loc: " + _run_time_loc.string() +
-      ", resolution_loc: " + _resolution_loc.string())
-    // var resolution = Vector2(F32(800), F32(450))
-    // shader.set_value_vector2(_resolution_loc, resolution)
+    var resolution: Array[F32] = [800; 450]
+    shader.set_value(_resolution_loc, resolution)
 
   fun ref apply() =>
     _camera.update(CameraFirstPerson)
     let delta_time = _window.get_frame_time()
     _run_time = _run_time + delta_time
 
-    // let camera_position: Array[F32] = [
-    //   _camera.position.x
-    //   _camera.position.y
-    //   _camera.position.z ]
-    // let camera_target: Array[F32] = [
-    //   _camera.target.x
-    //   _camera.target.y
-    //   _camera.target.z ]
+    _shader.set_value(_view_eye_loc, _camera.position.array())
+    _shader.set_value(_view_center_loc, _camera.target.array())
+    _shader.set_value(_run_time_loc, _run_time)
 
-    // var camera_position = Array[F32](3)
-    // try
-    //   camera_position(0)? = _camera.position.x
-    //   camera_position(1)? = _camera.position.y
-    //   camera_position(2)? = _camera.position.z
-    // end
-
-    // _shader.set_value_vector3(_view_eye_loc, camera_position)
-    // _shader.set_value_vector3(_view_center_loc, camera_target)
-    // _shader.set_value_vector3(_view_eye_loc, _camera.position)
-    // _shader.set_value_vector3(_view_center_loc, _camera.target)
-    // _shader.set_value_f32(_run_time_loc, _run_time)
-
-    // if _window.is_resized() then
-    //   var resolution =
-    //     Vector2(_window.get_screen_width().f32(), _window.get_screen_height().f32())
-    //   _shader.set_value_vector2(_resolution_loc, resolution)
-    // end
+    if _window.is_resized() then
+      var resolution: Array[F32] = [
+        _window.get_screen_width().f32()
+        _window.get_screen_height().f32() ]
+      _shader.set_value(_resolution_loc, resolution)
+    end
 
     with dc = _window.begin_drawing() do
       dc.clear_background(Colors.ray_white())
+      with sc = _shader.begin_shader_mode() do
+        dc.draw_rectangle(0, 0, _window.get_screen_width(),
+          _window.get_screen_height(), Colors.white())
+      end
       dc.draw_fps(10, 10)
-      dc.draw_text("Congrats! You created your first window!",
-        190, 200, 20, Colors.black())
+      dc.draw_text("(c) Raymarching shader by Iñigo Quilez. MIT License.",
+        _window.get_screen_width() - 280, _window.get_screen_height() - 20,
+        10, Colors.black())
     end
 
     if not _window.should_close() then apply() end

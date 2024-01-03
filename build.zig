@@ -17,12 +17,17 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const libraylib = b.addSharedLibrary(.{
-        .name = "raylibc",
-        .target = target,
-        .optimize = optimize,
-    });
-    raylib.addRaylibTo(b, libraylib, target, .{});
+    // Add to raylib.h: #include "../../src/raylib_allocators.h"
+    const libraylib = raylib.addSharedRaylib(b, target, optimize, .{});
+    addCSourceFilesVersioned(libraylib, &.{
+        srcdir ++ "/src/raylib_allocators.c",
+    }, &[_][]const u8{"-std=c99"});
+    libraylib.addIncludePath(.{ .path = srcdir ++ "/src" });
+    libraylib.addSystemIncludePath(.{ .path = srcdir ++ "/raylib_src/src" });
+    libraylib.defineCMacro("RL_MALLOC(sz)", "rl_pony_malloc(sz)");
+    libraylib.defineCMacro("RL_CALLOC(n,sz)", "rl_pony_calloc(n,sz)");
+    libraylib.defineCMacro("RL_REALLOC(ptr,sz)", "rl_pony_realloc(ptr,sz)");
+    libraylib.defineCMacro("RL_FREE(ptr)", "rl_pony_free(ptr)");
 
     const lib = b.addSharedLibrary(.{
         .name = "shims",
@@ -30,6 +35,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .link_libc = true,
     });
+    lib.defineCMacro("USE_LIBTYPE_SHARED", null);
 
     addCSourceFilesVersioned(lib, &.{
         srcdir ++ "/src/shims.c",

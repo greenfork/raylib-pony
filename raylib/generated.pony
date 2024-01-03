@@ -1,5 +1,5 @@
 use "path:../zig-out/lib"
-use "lib:raylibc"
+use "lib:raylib"
 use "lib:shims"
 use "collections"
 
@@ -1236,33 +1236,6 @@ type NPatchLayout is
   | NPatchThreePatchHorizontal
 )
 
-struct Vector2
-  let x: F32
-  let y: F32
-
-  new create(x': F32, y': F32) =>
-    x = x'
-    y = y'
-struct Vector3
-  let x: F32
-  let y: F32
-  let z: F32
-
-  new create(x': F32, y': F32, z': F32) =>
-    x = x'
-    y = y'
-    z = z'
-struct Vector4
-  let x: F32
-  let y: F32
-  let z: F32
-  let w: F32
-
-  new create(x': F32, y': F32, z': F32, w': F32) =>
-    x = x'
-    y = y'
-    z = z'
-    w = w'
 struct Matrix
   let m0: F32
   let m4: F32
