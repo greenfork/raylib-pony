@@ -1,4 +1,4 @@
-default: example_shaders_raymarching
+default: example_core_basic_window
 
 generate:
 	corral run -- ponyc -d -o build generate/

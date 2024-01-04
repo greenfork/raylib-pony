@@ -33,6 +33,8 @@ class Window
 
   fun get_frame_time(): F32 => @PonyGetFrameTime()
 
+  fun get_time(): F64 => @PonyGetTime()
+
   fun is_resized(): Bool => @PonyIsWindowResized()
 
   fun get_screen_width(): I32 => @PonyGetScreenWidth()
