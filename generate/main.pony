@@ -89,8 +89,11 @@ class Generator
   let _file: File
   let _cfile: File
   let _struct_names: Set[String] = Set[String]
-  // Parameter names that tell us the value is an array and not a pointer.
+    """All names of available structs in Raylib."""
   let _array_parameter_names: Set[String] = Set[String]
+    """Parameter names that tell us the value is an array and not a pointer."""
+  let _linal_types: Map[String, String] = Map[String, String]
+    """Types integrated from the linal library with their Raylib equivalents"""
 
   new create(api: JsonDoc, target_file_path: FilePath,
     c_file_path: FilePath) ?
@@ -101,6 +104,11 @@ class Generator
     _array_parameter_names.set("animations")
     _array_parameter_names.set("glyphRecs")
     _array_parameter_names.set("images")
+    _linal_types.insert("Vector2", "V2")
+    _linal_types.insert("Vector3", "V3")
+    _linal_types.insert("Vector4", "V4")
+    _linal_types.insert("Quaternion", "Q4")
+    _linal_types.insert("Ray", "R2")
 
     let structs = _json.data("structs")? as JsonArray
     for struct' in structs.data.values() do
@@ -133,7 +141,7 @@ class Generator
     """)
 
   fun ref gen_functions(): FunctionGenerator ? =>
-    let gen = FunctionGenerator(_file, _cfile, _struct_names)
+    let gen = FunctionGenerator(_file, _cfile, _struct_names, _linal_types)
     let functions = _json.data("functions")? as JsonArray
     for function' in functions.data.values() do
       let function = function' as JsonObject
@@ -180,7 +188,7 @@ class Generator
     gen
 
   fun ref gen_structs(aliases: Array[AliasDesc] box): StructGenerator ? =>
-    let gen = StructGenerator(_file, _struct_names, aliases)
+    let gen = StructGenerator(_file, _struct_names, aliases, _linal_types)
     let structs = _json.data("structs")? as JsonArray
     for struct'' in structs.data.values() do
       let struct' = struct'' as JsonObject
@@ -224,25 +232,36 @@ class Generator
     end
     gen
 
-// name, c_name, type, c_type
 type FunctionParam is (String val, String val, String val, String val)
-// name, return_type, c_return_type, params
+  """name, c_name, type, c_type"""
+
 type FunctionDesc is (String val, String val, String val, Array[FunctionParam])
+"""name, return_type, c_return_type, params"""
+
 class FunctionGenerator
   let _file: File
   let _cfile: File
   let _functions: Array[FunctionDesc] = Array[FunctionDesc]
+    """All functions in Raylib."""
   let _struct_names: Set[String]
-  // Function names that have variadic arguments and hence should be skipped
-  // because it is not possible to pass variadic arguments to another function.
+    """All names of available structs in Raylib."""
   let _variadic_function_names: Set[String] = Set[String]
-  // Functions names that return an array pointer as their result.
+    """
+    Function names that have variadic arguments and hence should be skipped
+    because it is not possible to pass variadic arguments to another function.
+    """
   let _array_returning_function_names: Set[String] = Set[String]
+    """Functions names that return an array pointer as their result."""
+  let _linal_types: Map[String, String]
+    """Types integrated from the linal library with their Raylib equivalents"""
 
-  new create(file: File, cfile: File, struct_names: Set[String]) =>
+  new create(file: File, cfile: File, struct_names: Set[String],
+    linal_types: Map[String, String])
+  =>
     _file = file
     _cfile = cfile
     _struct_names = struct_names
+    _linal_types = linal_types
     _variadic_function_names.set("TraceLog")
     _variadic_function_names.set("TextFormat")
     _array_returning_function_names.set("LoadImageColors")
@@ -273,6 +292,9 @@ class FunctionGenerator
         end
         if type' == "..." then
           _file.queue("...")
+        elseif _linal_types.contains(type') then
+          let linal_type = try _linal_types(type')? else "" end
+          _file.queue(n + ": Pointer[" + linal_type + "] tag")
         else
           _file.queue(n + ": " + type')
         end
@@ -416,32 +438,54 @@ class EnumGenerator
       _file.flush()
     end
 
-// name, type, c_type
 type StructField is (String val, String val, String val)
+  """name, type, c_type"""
+
 type StructDesc is (String val, Array[StructField])
+  """struct_name, fields"""
+
 class StructGenerator
   let _file: File
   let _structs: Array[StructDesc] = Array[StructDesc]
+    """All structs present in Raylib."""
   let _struct_names: Set[String]
+    """All names of available structs in Raylib."""
   let _skip_statement_generation: Set[String] = Set[String]
+    """
+    Skip declaration of these structs since they are written manually. This
+    is required in order to add extra methods to these structs such as
+    Camera.update().
+    """
   let _aliases: Array[AliasDesc] box
+    """A list of aliases which helps handling aliased structs."""
+  let _linal_types: Map[String, String]
+    """Types integrated from the linal library with their Raylib equivalents"""
 
-  new create(file: File, struct_names: Set[String], aliases: Array[AliasDesc] box) =>
+  new create(file: File, struct_names: Set[String],
+    aliases: Array[AliasDesc] box, linal_types: Map[String, String])
+  =>
     _file = file
     _struct_names = struct_names
     _aliases = aliases
+    _linal_types = linal_types
+
+    // Require additional methods
     _skip_statement_generation.set("Shader")
     _skip_statement_generation.set("Camera2D")
     _skip_statement_generation.set("Camera3D")
+
+    // Replaced with linal
     _skip_statement_generation.set("Vector2")
     _skip_statement_generation.set("Vector3")
     _skip_statement_generation.set("Vector4")
+    _skip_statement_generation.set("Ray")
 
   fun ref add(desc: StructDesc) => _structs.push(desc)
 
   fun ref generate_statements() =>
     let is_embed = {(type': String, c_type: String): Bool =>
-      (not Types.is_pointer(c_type)) and _struct_names.contains(type') }
+      (not Types.is_pointer(c_type)) and _struct_names.contains(type')
+      and (not _linal_types.contains(type')) }
     for (struct_name, fields) in _structs.values() do
       if _skip_statement_generation.contains(struct_name) then continue end
 
@@ -452,7 +496,7 @@ class StructGenerator
         else
           _file.queue("  let ")
         end
-        _file.queue(name + ": " + type' + "\n")
+        _file.queue(name + ": " + _linal_types.get_or_else(type', type') + "\n")
       end
       _file.queue("\n  new create(")
       var first_param = true
@@ -462,7 +506,7 @@ class StructGenerator
         else
           _file.queue(", ")
         end
-        _file.queue(name + "': " + type')
+        _file.queue(name + "': " + _linal_types.get_or_else(type', type'))
       end
       _file.queue(") =>\n")
       for (name, type', c_type) in fields.values() do

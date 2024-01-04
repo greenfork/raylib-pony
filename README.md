@@ -19,3 +19,9 @@ $ corral fetch
 $ make
 # Press Esc to exit the window
 ```
+
+### To do
+
+- Raylib uses column-major matrices, linal only provides row-major. The
+  description from raylib.h: "Matrix, 4x4 components, column major, OpenGL
+  style, right-handed".

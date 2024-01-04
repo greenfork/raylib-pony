@@ -1,6 +1,20 @@
 use "debug"
 use linal = "linal"
 
+type V4 is linal.V4
+type V4fun is linal.V4fun
+type V3 is linal.V3
+type V3fun is linal.V3fun
+type V2 is linal.V2
+type V2fun is linal.V2fun
+type Q4 is linal.Q4
+type Q4fun is linal.Q4fun
+type R2 is linal.R2
+type R2fun is linal.R2fun
+type R4 is linal.R4
+type R4fun is linal.R4fun
+type Linear is linal.Linear
+
 class Window
   new create(width: I32, height: I32, title: String) =>
     @PonyInitWindow(width, height, title.cstring())
@@ -68,7 +82,7 @@ struct Shader
     @PonyGetShaderLocation(this, uniform_name.cstring())
 
   fun ref set_value(loc_index: I32,
-    value: (F32 | I32 | Array[F32] | Array[I32] | V2 | V3))
+    value: (F32 | I32 | Array[F32] | Array[I32] | V2 | V3 | V4))
   =>
     // TODO: also add SHADER_UNIFORM_SAMPLER2D type. I don't know how it is
     // used currently.
@@ -85,6 +99,9 @@ struct Shader
     | let v: V3 =>
       var v' = v
       @PonySetShaderValue(this, loc_index, addressof v', ShaderUniformVec3())
+    | let v: V4 =>
+      var v' = v
+      @PonySetShaderValue(this, loc_index, addressof v', ShaderUniformVec4())
     | let v: Array[F32] if v.size() == 2 =>
       @PonySetShaderValue(this, loc_index, v.cpointer(), ShaderUniformVec2())
     | let v: Array[F32] if v.size() == 3 =>
@@ -110,11 +127,6 @@ class ShaderModeContext
 
   fun ref end_shader_mode() => @PonyEndShaderMode()
 
-type V3 is linal.V3
-type V3fun is linal.V3fun
-type V2 is linal.V2
-type V2fun is linal.V2fun
-
 struct Camera3D
   let position: V3
   let target: V3
@@ -134,15 +146,19 @@ struct Camera3D
   fun ref update(camera_mode: CameraMode) =>
     @PonyUpdateCamera(this, camera_mode())
 
+  fun ref get_world_to_screen(position': V3): Vector2 =>
+    var position'' = position'
+    @PonyGetWorldToScreen(addressof position'', this)
+
 struct Camera2D
-  embed offset: Vector2
-  embed target: Vector2
+  let offset: V2
+  let target: V2
   let rotation: F32
   let zoom: F32
 
-  new create(offset': Vector2, target': Vector2, rotation': F32, zoom': F32) =>
-    offset = Vector2(offset'.x, offset'.y)
-    target = Vector2(target'.x, target'.y)
+  new create(offset': V2, target': V2, rotation': F32, zoom': F32) =>
+    offset = offset'
+    target = target'
     rotation = rotation'
     zoom = zoom'
 
@@ -161,6 +177,14 @@ struct Vector2
     x = x'
     y = y'
 
+  new from_v2(v: V2) =>
+    x = v._1
+    y = v._2
+
+  fun v2(): V2 => (x, y)
+
+  fun string(): String iso^ => V2fun.to_string(v2())
+
 struct Vector3
   let x: F32
   let y: F32
@@ -170,6 +194,15 @@ struct Vector3
     x = x'
     y = y'
     z = z'
+
+  new from_v3(v: V3) =>
+    x = v._1
+    y = v._2
+    z = v._3
+
+  fun v3(): V3 => (x, y, z)
+
+  fun string(): String iso^ => V3fun.to_string(v3())
 
 struct Vector4
   let x: F32
@@ -182,3 +215,19 @@ struct Vector4
     y = y'
     z = z'
     w = w'
+
+  fun v4(): V4 => (x, y, z, w)
+
+  fun string(): String iso^ => V4fun.to_string(v4())
+
+struct Ray
+  let position: V3
+  let direction: V3
+
+  new create(position': V3, direction': V3) =>
+    position = position'
+    direction = direction'
+
+  fun r2(): R2 => (position, direction)
+
+  fun string(): String iso^ => R2fun.to_string(r2())
