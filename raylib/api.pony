@@ -78,6 +78,10 @@ struct Shader
     id = id'
     locs = locs'
 
+  fun ref dispose() => unload()
+
+  fun ref unload() => @PonyUnloadShader(this)
+
   fun ref get_location(uniform_name: String): I32 =>
     @PonyGetShaderLocation(this, uniform_name.cstring())
 

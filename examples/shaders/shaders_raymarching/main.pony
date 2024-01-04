@@ -7,10 +7,13 @@ actor Main
     with window = Window(800, 450, "raylib [shaders] Raymarching") do
       window.disable_cursor()
       window.set_target_fps(60)
-      let shader = LoadShader(None,
-        "raylib_src/examples/shaders/resources/shaders/glsl330/raymarching.fs")
-      let game = Game(window, shader)
-      game()
+      with shader = LoadShader(
+        None,
+        "raylib_src/examples/shaders/resources/shaders/glsl330/raymarching.fs"
+      ) do
+        let game = Game(window, shader)
+        game()
+      end
     end
 
 class Game
