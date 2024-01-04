@@ -204,6 +204,8 @@ use @PonyGetGesturePinchAngle[F32]()
 use @PonyUpdateCamera[None](camera: Camera, mode: I32)
 use @PonyUpdateCameraPro[None](camera: Camera, movement: Vector3, rotation: Vector3, zoom: F32)
 use @PonySetShapesTexture[None](texture: Texture2D, source: Rectangle)
+use @PonyGetShapesTexture[Texture2D]()
+use @PonyGetShapesTextureRectangle[Rectangle]()
 use @PonyDrawPixel[None](posX: I32, posY: I32, color: Color)
 use @PonyDrawPixelV[None](position: Vector2, color: Color)
 use @PonyDrawLine[None](startPosX: I32, startPosY: I32, endPosX: I32, endPosY: I32, color: Color)
@@ -269,6 +271,7 @@ use @PonyLoadImage[Image](fileName: Pointer[U8] tag)
 use @PonyLoadImageRaw[Image](fileName: Pointer[U8] tag, width: I32, height: I32, format: I32, headerSize: I32)
 use @PonyLoadImageSvg[Image](fileNameOrString: Pointer[U8] tag, width: I32, height: I32)
 use @PonyLoadImageAnim[Image](fileName: Pointer[U8] tag, frames: Pointer[I32] tag)
+use @PonyLoadImageAnimFromMemory[Image](fileType: Pointer[U8] tag, fileData: Pointer[U8] tag, dataSize: I32, frames: Pointer[I32] tag)
 use @PonyLoadImageFromMemory[Image](fileType: Pointer[U8] tag, fileData: Pointer[U8] tag, dataSize: I32)
 use @PonyLoadImageFromTexture[Image](texture: Texture2D)
 use @PonyLoadImageFromScreen[Image]()
@@ -418,6 +421,7 @@ use @PonyTextToUpper[Pointer[U8] tag](text: Pointer[U8] tag)
 use @PonyTextToLower[Pointer[U8] tag](text: Pointer[U8] tag)
 use @PonyTextToPascal[Pointer[U8] tag](text: Pointer[U8] tag)
 use @PonyTextToInteger[I32](text: Pointer[U8] tag)
+use @PonyTextToFloat[F32](text: Pointer[U8] tag)
 use @PonyDrawLine3D[None](startPos: Vector3, endPos: Vector3, color: Color)
 use @PonyDrawPoint3D[None](position: Vector3, color: Color)
 use @PonyDrawCircle3D[None](center: Vector3, radius: F32, rotationAxis: Vector3, rotationAngle: F32, color: Color)
@@ -457,9 +461,10 @@ use @PonyUpdateMeshBuffer[None](mesh: Mesh, index: I32, data: Pointer[None] tag,
 use @PonyUnloadMesh[None](mesh: Mesh)
 use @PonyDrawMesh[None](mesh: Mesh, material: Material, transform: Matrix)
 use @PonyDrawMeshInstanced[None](mesh: Mesh, material: Material, transforms: Matrix, instances: I32)
-use @PonyExportMesh[Bool](mesh: Mesh, fileName: Pointer[U8] tag)
 use @PonyGetMeshBoundingBox[BoundingBox](mesh: Mesh)
 use @PonyGenMeshTangents[None](mesh: Mesh)
+use @PonyExportMesh[Bool](mesh: Mesh, fileName: Pointer[U8] tag)
+use @PonyExportMeshAsCode[Bool](mesh: Mesh, fileName: Pointer[U8] tag)
 use @PonyGenMeshPoly[Mesh](sides: I32, radius: F32)
 use @PonyGenMeshPlane[Mesh](width: F32, length: F32, resX: I32, resZ: I32)
 use @PonyGenMeshCube[Mesh](width: F32, height: F32, length: F32)
@@ -1321,15 +1326,15 @@ struct Texture
     format = format'
 struct RenderTexture
   let id: U32
-  let texture: Texture
-  let depth: Texture
+  embed texture: Texture
+  embed depth: Texture
 
   new create(id': U32, texture': Texture, depth': Texture) =>
     id = id'
-    texture = texture'
-    depth = depth'
+    texture = Texture(texture'.id, texture'.width, texture'.height, texture'.mipmaps, texture'.format)
+    depth = Texture(depth'.id, depth'.width, depth'.height, depth'.mipmaps, depth'.format)
 struct NPatchInfo
-  let source: Rectangle
+  embed source: Rectangle
   let left: I32
   let top: I32
   let right: I32
@@ -1337,7 +1342,7 @@ struct NPatchInfo
   let layout: I32
 
   new create(source': Rectangle, left': I32, top': I32, right': I32, bottom': I32, layout': I32) =>
-    source = source'
+    source = Rectangle(source'.x, source'.y, source'.width, source'.height)
     left = left'
     top = top'
     right = right'
@@ -1348,19 +1353,19 @@ struct GlyphInfo
   let offset_x: I32
   let offset_y: I32
   let advance_x: I32
-  let image: Image
+  embed image: Image
 
   new create(value': I32, offset_x': I32, offset_y': I32, advance_x': I32, image': Image) =>
     value = value'
     offset_x = offset_x'
     offset_y = offset_y'
     advance_x = advance_x'
-    image = image'
+    image = Image(image'.data, image'.width, image'.height, image'.mipmaps, image'.format)
 struct Font
   let base_size: I32
   let glyph_count: I32
   let glyph_padding: I32
-  let texture: Texture2D
+  embed texture: Texture2D
   let recs: Pointer[Rectangle] tag
   let glyphs: Pointer[GlyphInfo] tag
 
@@ -1368,7 +1373,7 @@ struct Font
     base_size = base_size'
     glyph_count = glyph_count'
     glyph_padding = glyph_padding'
-    texture = texture'
+    texture = Texture(texture'.id, texture'.width, texture'.height, texture'.mipmaps, texture'.format)
     recs = recs'
     glyphs = glyphs'
 struct Mesh
@@ -1405,32 +1410,32 @@ struct Mesh
     vao_id = vao_id'
     vbo_id = vbo_id'
 struct MaterialMap
-  let texture: Texture2D
-  let color: Color
+  embed texture: Texture2D
+  embed color: Color
   let value: F32
 
   new create(texture': Texture2D, color': Color, value': F32) =>
-    texture = texture'
-    color = color'
+    texture = Texture(texture'.id, texture'.width, texture'.height, texture'.mipmaps, texture'.format)
+    color = Color(color'.r, color'.g, color'.b, color'.a)
     value = value'
 struct Material
-  let shader: Shader
+  embed shader: Shader
   let maps: Pointer[MaterialMap] tag
   let params: Pointer[F32] tag
 
   new create(shader': Shader, maps': Pointer[MaterialMap] tag, params': Pointer[F32] tag) =>
-    shader = shader'
+    shader = Shader(shader'.id, shader'.locs)
     maps = maps'
     params = params'
 struct Transform
-  let translation: Vector3
-  let rotation: Quaternion
-  let scale: Vector3
+  embed translation: Vector3
+  embed rotation: Quaternion
+  embed scale: Vector3
 
   new create(translation': Vector3, rotation': Quaternion, scale': Vector3) =>
-    translation = translation'
-    rotation = rotation'
-    scale = scale'
+    translation = Vector3(translation'.x, translation'.y, translation'.z)
+    rotation = Vector4(rotation'.x, rotation'.y, rotation'.z, rotation'.w)
+    scale = Vector3(scale'.x, scale'.y, scale'.z)
 struct BoneInfo
   let name: Pointer[U8] tag
   let parent: I32
@@ -1439,7 +1444,7 @@ struct BoneInfo
     name = name'
     parent = parent'
 struct Model
-  let transform: Matrix
+  embed transform: Matrix
   let mesh_count: I32
   let material_count: I32
   let meshes: Pointer[Mesh] tag
@@ -1450,7 +1455,7 @@ struct Model
   let bind_pose: Pointer[Transform] tag
 
   new create(transform': Matrix, mesh_count': I32, material_count': I32, meshes': Pointer[Mesh] tag, materials': Pointer[Material] tag, mesh_material': Pointer[I32] tag, bone_count': I32, bones': Pointer[BoneInfo] tag, bind_pose': Pointer[Transform] tag) =>
-    transform = transform'
+    transform = Matrix(transform'.m0, transform'.m4, transform'.m8, transform'.m12, transform'.m1, transform'.m5, transform'.m9, transform'.m13, transform'.m2, transform'.m6, transform'.m10, transform'.m14, transform'.m3, transform'.m7, transform'.m11, transform'.m15)
     mesh_count = mesh_count'
     material_count = material_count'
     meshes = meshes'
@@ -1473,30 +1478,30 @@ struct ModelAnimation
     frame_poses = frame_poses'
     name = name'
 struct Ray
-  let position: Vector3
-  let direction: Vector3
+  embed position: Vector3
+  embed direction: Vector3
 
   new create(position': Vector3, direction': Vector3) =>
-    position = position'
-    direction = direction'
+    position = Vector3(position'.x, position'.y, position'.z)
+    direction = Vector3(direction'.x, direction'.y, direction'.z)
 struct RayCollision
   let hit: Bool
   let distance: F32
-  let point: Vector3
-  let normal: Vector3
+  embed point: Vector3
+  embed normal: Vector3
 
   new create(hit': Bool, distance': F32, point': Vector3, normal': Vector3) =>
     hit = hit'
     distance = distance'
-    point = point'
-    normal = normal'
+    point = Vector3(point'.x, point'.y, point'.z)
+    normal = Vector3(normal'.x, normal'.y, normal'.z)
 struct BoundingBox
-  let min: Vector3
-  let max: Vector3
+  embed min: Vector3
+  embed max: Vector3
 
   new create(min': Vector3, max': Vector3) =>
-    min = min'
-    max = max'
+    min = Vector3(min'.x, min'.y, min'.z)
+    max = Vector3(max'.x, max'.y, max'.z)
 struct Wave
   let frame_count: U32
   let sample_rate: U32
@@ -1524,21 +1529,21 @@ struct AudioStream
     sample_size = sample_size'
     channels = channels'
 struct Sound
-  let stream: AudioStream
+  embed stream: AudioStream
   let frame_count: U32
 
   new create(stream': AudioStream, frame_count': U32) =>
-    stream = stream'
+    stream = AudioStream(stream'.buffer, stream'.processor, stream'.sample_rate, stream'.sample_size, stream'.channels)
     frame_count = frame_count'
 struct Music
-  let stream: AudioStream
+  embed stream: AudioStream
   let frame_count: U32
   let looping: Bool
   let ctx_type: I32
   let ctx_data: Pointer[None] tag
 
   new create(stream': AudioStream, frame_count': U32, looping': Bool, ctx_type': I32, ctx_data': Pointer[None] tag) =>
-    stream = stream'
+    stream = AudioStream(stream'.buffer, stream'.processor, stream'.sample_rate, stream'.sample_size, stream'.channels)
     frame_count = frame_count'
     looping = looping'
     ctx_type = ctx_type'
@@ -1548,19 +1553,17 @@ struct VrDeviceInfo
   let v_resolution: I32
   let h_screen_size: F32
   let v_screen_size: F32
-  let v_screen_center: F32
   let eye_to_screen_distance: F32
   let lens_separation_distance: F32
   let interpupillary_distance: F32
   let lens_distortion_values: Pointer[F32] tag
   let chroma_ab_correction: Pointer[F32] tag
 
-  new create(h_resolution': I32, v_resolution': I32, h_screen_size': F32, v_screen_size': F32, v_screen_center': F32, eye_to_screen_distance': F32, lens_separation_distance': F32, interpupillary_distance': F32, lens_distortion_values': Pointer[F32] tag, chroma_ab_correction': Pointer[F32] tag) =>
+  new create(h_resolution': I32, v_resolution': I32, h_screen_size': F32, v_screen_size': F32, eye_to_screen_distance': F32, lens_separation_distance': F32, interpupillary_distance': F32, lens_distortion_values': Pointer[F32] tag, chroma_ab_correction': Pointer[F32] tag) =>
     h_resolution = h_resolution'
     v_resolution = v_resolution'
     h_screen_size = h_screen_size'
     v_screen_size = v_screen_size'
-    v_screen_center = v_screen_center'
     eye_to_screen_distance = eye_to_screen_distance'
     lens_separation_distance = lens_separation_distance'
     interpupillary_distance = interpupillary_distance'

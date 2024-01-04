@@ -787,6 +787,20 @@ void PonyUpdateCameraPro(Camera * camera, Vector3* movement, Vector3* rotation, 
 void PonySetShapesTexture(Texture2D* texture, Rectangle* source) {
 	SetShapesTexture(*texture, *source);
 }
+Texture2D* PonyGetShapesTexture() {
+	Texture2D result = GetShapesTexture();
+	pony_ctx_t* ctx = pony_ctx();
+	Texture2D* result_ptr = (Texture2D*)pony_alloc(ctx, sizeof(Texture2D));
+	*result_ptr = result;
+	return result_ptr;
+}
+Rectangle* PonyGetShapesTextureRectangle() {
+	Rectangle result = GetShapesTextureRectangle();
+	pony_ctx_t* ctx = pony_ctx();
+	Rectangle* result_ptr = (Rectangle*)pony_alloc(ctx, sizeof(Rectangle));
+	*result_ptr = result;
+	return result_ptr;
+}
 void PonyDrawPixel(int posX, int posY, Color* color) {
 	DrawPixel(posX, posY, *color);
 }
@@ -1026,6 +1040,13 @@ Image* PonyLoadImageSvg(const char * fileNameOrString, int width, int height) {
 }
 Image* PonyLoadImageAnim(const char * fileName, int * frames) {
 	Image result = LoadImageAnim(fileName, frames);
+	pony_ctx_t* ctx = pony_ctx();
+	Image* result_ptr = (Image*)pony_alloc(ctx, sizeof(Image));
+	*result_ptr = result;
+	return result_ptr;
+}
+Image* PonyLoadImageAnimFromMemory(const char * fileType, const unsigned char * fileData, int dataSize, int * frames) {
+	Image result = LoadImageAnimFromMemory(fileType, fileData, dataSize, frames);
 	pony_ctx_t* ctx = pony_ctx();
 	Image* result_ptr = (Image*)pony_alloc(ctx, sizeof(Image));
 	*result_ptr = result;
@@ -1631,7 +1652,7 @@ const char * PonyTextSubtext(const char * text, int position, int length) {
 	const char * result = TextSubtext(text, position, length);
 	return result;
 }
-char * PonyTextReplace(char * text, const char * replace, const char * by) {
+char * PonyTextReplace(const char * text, const char * replace, const char * by) {
 	char * result = TextReplace(text, replace, by);
 	return result;
 }
@@ -1668,6 +1689,10 @@ const char * PonyTextToPascal(const char * text) {
 }
 int PonyTextToInteger(const char * text) {
 	int result = TextToInteger(text);
+	return result;
+}
+float PonyTextToFloat(const char * text) {
+	float result = TextToFloat(text);
 	return result;
 }
 void PonyDrawLine3D(Vector3* startPos, Vector3* endPos, Color* color) {
@@ -1800,10 +1825,6 @@ void PonyDrawMesh(Mesh* mesh, Material* material, Matrix* transform) {
 void PonyDrawMeshInstanced(Mesh* mesh, Material* material, const Matrix * transforms, int instances) {
 	DrawMeshInstanced(*mesh, *material, transforms, instances);
 }
-bool PonyExportMesh(Mesh* mesh, const char * fileName) {
-	bool result = ExportMesh(*mesh, fileName);
-	return result;
-}
 BoundingBox* PonyGetMeshBoundingBox(Mesh* mesh) {
 	BoundingBox result = GetMeshBoundingBox(*mesh);
 	pony_ctx_t* ctx = pony_ctx();
@@ -1813,6 +1834,14 @@ BoundingBox* PonyGetMeshBoundingBox(Mesh* mesh) {
 }
 void PonyGenMeshTangents(Mesh * mesh) {
 	GenMeshTangents(mesh);
+}
+bool PonyExportMesh(Mesh* mesh, const char * fileName) {
+	bool result = ExportMesh(*mesh, fileName);
+	return result;
+}
+bool PonyExportMeshAsCode(Mesh* mesh, const char * fileName) {
+	bool result = ExportMeshAsCode(*mesh, fileName);
+	return result;
 }
 Mesh* PonyGenMeshPoly(int sides, float radius) {
 	Mesh result = GenMeshPoly(sides, radius);

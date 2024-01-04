@@ -51,18 +51,18 @@ actor Main
         env.err.print("Unable to initialize enum generator")
         return
       end
-    let struct_generator =
-      try
-        generator.gen_structs()?
-      else
-        env.err.print("Unable to initialize struct generator")
-        return
-      end
     let alias_generator =
       try
         generator.gen_aliases()?
       else
         env.err.print("Unable to initialize alias generator")
+        return
+      end
+    let struct_generator =
+      try
+        generator.gen_structs(alias_generator.aliases())?
+      else
+        env.err.print("Unable to initialize struct generator")
         return
       end
     let color_generator =
@@ -179,13 +179,13 @@ class Generator
     end
     gen
 
-  fun ref gen_structs(): StructGenerator ? =>
-    let gen = StructGenerator(_file)
+  fun ref gen_structs(aliases: Array[AliasDesc] box): StructGenerator ? =>
+    let gen = StructGenerator(_file, _struct_names, aliases)
     let structs = _json.data("structs")? as JsonArray
-    for struct' in structs.data.values() do
-      let str = struct' as JsonObject
-      let name = str.data("name")? as String
-      let fields' = str.data("fields")? as JsonArray
+    for struct'' in structs.data.values() do
+      let struct' = struct'' as JsonObject
+      let name = struct'.data("name")? as String
+      let fields' = struct'.data("fields")? as JsonArray
       let fields = Array[StructField]
       for field' in fields'.data.values() do
         let field = field' as JsonObject
@@ -193,8 +193,9 @@ class Generator
         let c_field_type = field.data("type")? as String
         // We don't supply here _struct_names because there are too many
         // ambiguities regarding pointer vs array type.
-        let pony_field_type = Types.c_to_pony(c_field_type, Set[String])?
-        fields.push((Idents.camel_to_snake(field_name), pony_field_type))
+        let field_type = Types.c_to_pony(c_field_type, Set[String])?
+        fields.push((Idents.camel_to_snake(field_name), field_type,
+          c_field_type))
       end
       gen.add((name, fields))
     end
@@ -415,15 +416,20 @@ class EnumGenerator
       _file.flush()
     end
 
-type StructField is (String val, String val)
+// name, type, c_type
+type StructField is (String val, String val, String val)
 type StructDesc is (String val, Array[StructField])
 class StructGenerator
   let _file: File
   let _structs: Array[StructDesc] = Array[StructDesc]
+  let _struct_names: Set[String]
   let _skip_statement_generation: Set[String] = Set[String]
+  let _aliases: Array[AliasDesc] box
 
-  new create(file: File) =>
+  new create(file: File, struct_names: Set[String], aliases: Array[AliasDesc] box) =>
     _file = file
+    _struct_names = struct_names
+    _aliases = aliases
     _skip_statement_generation.set("Shader")
     _skip_statement_generation.set("Camera2D")
     _skip_statement_generation.set("Camera3D")
@@ -434,29 +440,79 @@ class StructGenerator
   fun ref add(desc: StructDesc) => _structs.push(desc)
 
   fun ref generate_statements() =>
+    let is_embed = {(type': String, c_type: String): Bool =>
+      (not Types.is_pointer(c_type)) and _struct_names.contains(type') }
     for (struct_name, fields) in _structs.values() do
       if _skip_statement_generation.contains(struct_name) then continue end
 
       _file.queue("struct " + struct_name + "\n")
-      for (name, typ) in fields.values() do
-        _file.queue("  let " + name + ": " + typ + "\n")
+      for (name, type', c_type) in fields.values() do
+        if is_embed(type', c_type) then
+          _file.queue("  embed ")
+        else
+          _file.queue("  let ")
+        end
+        _file.queue(name + ": " + type' + "\n")
       end
       _file.queue("\n  new create(")
       var first_param = true
-      for (name, typ) in fields.values() do
+      for (name, type', c_type) in fields.values() do
         if first_param then
-          _file.queue(name + "': " + typ)
           first_param = false
         else
-          _file.queue(", " + name + "': " + typ)
+          _file.queue(", ")
         end
+        _file.queue(name + "': " + type')
       end
       _file.queue(") =>\n")
-      for (name, typ) in fields.values() do
-        _file.queue("    " + name + " = " + name + "'\n")
+      for (name, type', c_type) in fields.values() do
+        _file.queue("    " + name + " = ")
+        if is_embed(type', c_type) then
+          let desc =
+            try
+              _find_by_struct_name(type')?
+            else
+              Debug("Failed to find a struct by name: '" + type' + "'")
+              return
+            end
+          _file.queue(_gen_constructor(desc, name) + "\n")
+        else
+          _file.queue(name + "'\n")
+        end
       end
       _file.flush()
     end
+
+  fun _find_by_struct_name(name: String): StructDesc box ? =>
+    var alias_name = name
+    for (alias_name', alias_type) in _aliases.values() do
+      if name == alias_type then
+        alias_name = alias_name'
+        break
+      elseif name == alias_name' then
+        alias_name = alias_type
+        break
+      end
+    end
+    for desc in _structs.values() do
+      if (desc._1 == name) or (desc._1 == alias_name) then return desc end
+    end
+    error
+
+  fun _gen_constructor(desc: StructDesc box, field_name: String): String =>
+    let result = recover trn desc._1.clone() end
+    result.append("(")
+    var first_param = true
+    for (name, type', c_type) in desc._2.values() do
+      if first_param then
+        first_param = false
+      else
+        result.append(", ")
+      end
+      result.append(field_name + "'." + name)
+    end
+    result.append(")")
+    result
 
   fun ref generate_type_stubs() =>
     _file.write("""
@@ -485,6 +541,8 @@ class AliasGenerator
       _file.queue("\ntype " + name + " is " + type')
       _file.flush()
     end
+
+  fun aliases(): Array[AliasDesc] box => _aliases
 
 type ColorDesc is (String val, String val)
 class ColorGenerator
