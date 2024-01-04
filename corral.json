@@ -1,9 +1,13 @@
 {
-  "packages": [],
+  "packages": ["raylib"],
   "deps": [
     {
       "locator": "github.com/ponylang/json.git",
       "version": "0.1.0"
+    },
+    {
+      "locator": "github.com/greenfork/ponylang-linal.git",
+      "version": "0.2.2"
     }
   ],
   "info": {

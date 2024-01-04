@@ -1,4 +1,5 @@
 use "debug"
+use linal = "linal"
 
 class Window
   new create(width: I32, height: I32, title: String) =>
@@ -67,7 +68,7 @@ struct Shader
     @PonyGetShaderLocation(this, uniform_name.cstring())
 
   fun ref set_value(loc_index: I32,
-    value: (F32 | I32 | Array[F32] | Array[I32]))
+    value: (F32 | I32 | Array[F32] | Array[I32] | V2 | V3))
   =>
     // TODO: also add SHADER_UNIFORM_SAMPLER2D type. I don't know how it is
     // used currently.
@@ -78,6 +79,12 @@ struct Shader
     | let v: I32 =>
       var v' = v
       @PonySetShaderValue(this, loc_index, addressof v', ShaderUniformInt())
+    | let v: V2 =>
+      var v' = v
+      @PonySetShaderValue(this, loc_index, addressof v', ShaderUniformVec2())
+    | let v: V3 =>
+      var v' = v
+      @PonySetShaderValue(this, loc_index, addressof v', ShaderUniformVec3())
     | let v: Array[F32] if v.size() == 2 =>
       @PonySetShaderValue(this, loc_index, v.cpointer(), ShaderUniformVec2())
     | let v: Array[F32] if v.size() == 3 =>
@@ -103,19 +110,24 @@ class ShaderModeContext
 
   fun ref end_shader_mode() => @PonyEndShaderMode()
 
+type V3 is linal.V3
+type V3fun is linal.V3fun
+type V2 is linal.V2
+type V2fun is linal.V2fun
+
 struct Camera3D
-  embed position: Vector3
-  embed target: Vector3
-  embed up: Vector3
+  let position: V3
+  let target: V3
+  let up: V3
   let fovy: F32
   let projection: I32
 
-  new create(position': Vector3, target': Vector3, up': Vector3, fovy': F32,
+  new create(position': V3, target': V3, up': V3, fovy': F32,
     projection': I32)
   =>
-    position = Vector3(position'.x, position'.y, position'.z)
-    target = Vector3(target'.x, target'.y, target'.z)
-    up = Vector3(up'.x, up'.y, up'.z)
+    position = position'
+    target = target'
+    up = up'
     fovy = fovy'
     projection = projection'
 
@@ -158,15 +170,6 @@ struct Vector3
     x = x'
     y = y'
     z = z'
-
-  fun ref array(): Array[F32] =>
-    let result = Array[F32].init(0, 3)
-    try
-      result(0)? = x
-      result(1)? = y
-      result(2)? = z
-    end
-    result
 
 struct Vector4
   let x: F32

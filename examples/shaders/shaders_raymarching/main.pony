@@ -26,9 +26,9 @@ class Game
   new create(window: Window, shader: Shader) =>
     _window = window
     _camera = Camera(where
-      position' = Vector3(2.5, 2.5, 3.0),
-      target' = Vector3(0.0, 0.0, 0.7),
-      up' = Vector3(0.0, 1.0, 0.0),
+      position' = V3fun(2.5, 2.5, 3.0),
+      target' = V3fun(0.0, 0.0, 0.7),
+      up' = V3fun(0.0, 1.0, 0.0),
       fovy' = 65.0,
       projection' = CameraPerspective())
     _shader = shader
@@ -36,7 +36,7 @@ class Game
     _view_center_loc = shader.get_location("viewCenter")
     _run_time_loc = shader.get_location("runTime")
     _resolution_loc = shader.get_location("resolution")
-    var resolution: Array[F32] = [800; 450]
+    var resolution = V2fun(800, 450)
     shader.set_value(_resolution_loc, resolution)
 
   fun ref apply() =>
@@ -44,14 +44,14 @@ class Game
     let delta_time = _window.get_frame_time()
     _run_time = _run_time + delta_time
 
-    _shader.set_value(_view_eye_loc, _camera.position.array())
-    _shader.set_value(_view_center_loc, _camera.target.array())
+    _shader.set_value(_view_eye_loc, _camera.position)
+    _shader.set_value(_view_center_loc, _camera.target)
     _shader.set_value(_run_time_loc, _run_time)
 
     if _window.is_resized() then
-      var resolution: Array[F32] = [
-        _window.get_screen_width().f32()
-        _window.get_screen_height().f32() ]
+      var resolution = (
+        _window.get_screen_width().f32(),
+        _window.get_screen_height().f32() )
       _shader.set_value(_resolution_loc, resolution)
     end
 
