@@ -9,6 +9,9 @@ actor Main
       game()
     end
 
+  fun @runtime_override_defaults(rto: RuntimeOptions) =>
+    rto.ponymaxthreads = 1
+
 class Game
   let _window: Window
 

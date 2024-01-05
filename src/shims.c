@@ -2,8 +2,17 @@
 #include <stdlib.h>
 #include <pony.h>
 
+#include <stdio.h>
+#include <string.h>
+
 void PonyInitWindow(int width, int height, const char * title) {
+	int textlen = strlen(title);
+	printf("  title: '%s', length: %d\n", title, textlen);
+	char* mytitle = (char*)malloc(textlen + 1);
+	strcpy(mytitle, title);
+	printf("mytitle: '%s', length: %d\n", mytitle, (int)strlen(mytitle));
 	InitWindow(width, height, title);
+	free(mytitle);
 }
 void PonyCloseWindow() {
 	CloseWindow();
@@ -202,7 +211,8 @@ bool PonyIsCursorOnScreen() {
 	return result;
 }
 void PonyClearBackground(Color* color) {
-	ClearBackground(*color);
+	Color mycolor = (Color){ color->r, color->g, color->b, color->a };
+	ClearBackground(mycolor);
 }
 void PonyBeginDrawing() {
 	BeginDrawing();
@@ -1556,7 +1566,15 @@ void PonyDrawFPS(int posX, int posY) {
 	DrawFPS(posX, posY);
 }
 void PonyDrawText(const char * text, int posX, int posY, int fontSize, Color* color) {
-	DrawText(text, posX, posY, fontSize, *color);
+    int textlen = strlen(text);
+    printf("  text: '%s', length: %d\n", text, textlen);
+    char* mytext = (char*)malloc(textlen + 1);
+    strcpy(mytext, text);
+    printf("mytext: '%s', length: %d\n", mytext, strlen(mytext));
+
+    Color mycolor = (Color){ color->r, color->g, color->b, color->a };
+    DrawText(mytext, posX, posY, fontSize, mycolor);
+    free(mytext);
 }
 void PonyDrawTextEx(Font* font, const char * text, Vector2* position, float fontSize, float spacing, Color* tint) {
 	DrawTextEx(*font, text, *position, fontSize, spacing, *tint);

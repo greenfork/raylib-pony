@@ -34,6 +34,7 @@ build: zig-build
 	corral run -- ponyc -d -o build raylib
 
 zig-build:
+	cp src/myraylib.h raylib_src/src/raylib.h
 	zig build
 
 .PHONY: default build zig-build generate

@@ -13,6 +13,9 @@ actor Game
     _window.set_target_fps(1)
     apply()
 
+  fun @runtime_override_defaults(rto: RuntimeOptions) =>
+    rto.ponymaxthreads = 1
+
   be apply() =>
     Debug("tick")
     with dc = _window.begin_drawing() do
