@@ -11,8 +11,7 @@ void PonyInitWindow(int width, int height, const char * title) {
 	char* mytitle = (char*)malloc(textlen + 1);
 	strcpy(mytitle, title);
 	printf("mytitle: '%s', length: %d\n", mytitle, (int)strlen(mytitle));
-	InitWindow(width, height, title);
-	free(mytitle);
+	InitWindow(width, height, mytitle);
 }
 void PonyCloseWindow() {
 	CloseWindow();
