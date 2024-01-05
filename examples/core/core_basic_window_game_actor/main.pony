@@ -5,6 +5,9 @@ actor Main
   new create(env: Env) =>
     Game
 
+  fun @runtime_override_defaults(rto: RuntimeOptions) =>
+    rto.ponymaxthreads = 1
+
 actor Game
   let _window: Window
 
@@ -12,9 +15,6 @@ actor Game
     _window = Window(800, 450, "raylib [core] Basic window [game actor]")
     _window.set_target_fps(1)
     apply()
-
-  fun @runtime_override_defaults(rto: RuntimeOptions) =>
-    rto.ponymaxthreads = 1
 
   be apply() =>
     Debug("tick")
