@@ -1,5 +1,5 @@
-I stopped developing this library because I don't have enough expertise
-to solve the problems.
+I stopped developing this library but if you want to continue, you are
+welcome to.
 
 The current state is unworkable. All the obvious reasons: garbage collection,
 not a single thread execution -- were ruled out. There are some problems in
@@ -39,6 +39,8 @@ Current problems manifest in the following examples:
 - Install [Zig](https://ziglang.org/download/) and make it available in path,
   used for building the Raylib C library
 
+Do the following to run examples:
+
 ```shell
 $ git clone --recurse-submodules https://github.com/greenfork/raylib-pony.git
 $ cd raylib-pony
@@ -46,6 +48,13 @@ $ corral fetch
 $ make
 # Press Esc to exit the window
 ```
+
+Bindings are partially auto-generated in `raylib/generated.pony` and
+`src/shims.c`; and partially hand-written in `raylib/api.pony`. In order
+to generate bindings run `make generate`. Warning: current `src/shims.c` file
+is modified for core_basic_window example to never rely on the Pony GC for
+debugging purposes, it is fine that there will be a diff for this file when
+bindings are re-generated.
 
 ### To do
 
